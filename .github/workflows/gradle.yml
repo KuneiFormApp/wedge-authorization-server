@@ -1,0 +1,36 @@
+name: Gradle Build on PR
+
+# Esto define cuándo se ejecuta el action
+on:
+  pull_request:
+    branches: [ "main"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    # 1. Descargar el código
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+
+    # 3. Configurar Gradle
+    # Este action oficial se encarga de descargar Gradle y gestionar el Caching automáticamente
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    # 4. Dar permisos de ejecución al wrapper (por seguridad)
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    # 5. Ejecutar el build
+    # 'build' usualmente corre 'assemble' y 'check' (tests)
+    - name: Build with Gradle
+      run: ./gradlew build

@@ -1,0 +1,4 @@
+rootProject.name = 'wedge-authorization-server'
+include 'domain'
+include 'application'
+include 'infraestructure'

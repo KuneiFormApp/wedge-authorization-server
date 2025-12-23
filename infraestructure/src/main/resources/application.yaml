@@ -1,0 +1,119 @@
+server:
+  port: 9001
+  servlet:
+    context-path: /
+    session:
+      timeout: ${wedge.session.ttl:600}s # Uses wedge TTL setting, defaults to 600s
+
+spring:
+  application:
+    name: wedge-authorization-server
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+  threads:
+    virtual:
+      enabled: true
+
+
+
+# WedgeAuth Configuration
+wedge:
+  # User Provider Configuration (HTTP-based)
+  user-provider:
+    enabled: true
+    endpoint: ${USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
+    timeout: 5000 # milliseconds
+
+  # OAuth Client Configuration (Static)
+  clients:
+    - client-id: public-spa-client
+      client-secret: # No secret for public clients
+      client-name: Public SPA Client
+      client-authentication-methods:
+        - none
+      authorization-grant-types:
+        - authorization_code
+        - refresh_token
+      redirect-uris:
+        - http://localhost:3000/callback
+        - http://localhost:3000/silent-renew
+      post-logout-redirect-uris:
+        - http://localhost:3000/
+      scopes:
+        - openid
+        - profile
+        - email
+        - read
+        - write
+      require-authorization-consent: false
+      require-pkce: true
+
+    - client-id: confidential-backend-client
+      client-secret: ${CONFIDENTIAL_CLIENT_SECRET:secret}
+      client-name: Confidential Backend Client
+      client-authentication-methods:
+        - client_secret_basic
+        - client_secret_post
+      authorization-grant-types:
+        - client_credentials
+        - authorization_code
+      redirect-uris:
+        - http://localhost:8082/callback
+      scopes:
+        - openid
+        - profile
+        - email
+        - admin
+      require-authorization-consent: false
+      require-pkce: false
+
+  # Session Storage Configuration
+  session:
+    storage-type: ${SESSION_STORAGE_TYPE:in-memory} # Options: in-memory, redis
+    ttl: 600 # seconds (10 minutes) - applies to both in-memory and Redis
+    max-size: 10000 # Max sessions in cache (for in-memory storage only)
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      username: ${REDIS_USERNAME:}
+      database: ${REDIS_DATABASE:0}
+      namespace: ${REDIS_SESSION_NAMESPACE:wedge:session} # Key prefix for all session keys
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+
+  # JWT Configuration
+  jwt:
+    issuer: ${JWT_ISSUER:http://localhost:9001}
+    key-type: rsa # Options: rsa, ec
+    key-size: 2048 # For RSA: 2048, 4096; For EC: 256, 384, 512
+
+  # Supported Scopes
+  scopes:
+    - name: openid
+      description: OpenID Connect scope
+    - name: profile
+      description: User profile information
+    - name: email
+      description: User email address
+    - name: read
+      description: Read access
+    - name: write
+      description: Write access
+    - name: admin
+      description: Administrative access
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.kuneiform: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: TRACE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
