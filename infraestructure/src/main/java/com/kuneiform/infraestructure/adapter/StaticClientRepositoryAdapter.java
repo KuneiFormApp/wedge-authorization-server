@@ -1,6 +1,7 @@
 package com.kuneiform.infraestructure.adapter;
 
 import com.kuneiform.domain.model.OAuthClient;
+import com.kuneiform.domain.model.UserProviderConfig;
 import com.kuneiform.domain.port.ClientRepository;
 import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
 import java.util.HashSet;
@@ -46,6 +47,7 @@ public class StaticClientRepositoryAdapter implements ClientRepository {
                       .scopes(toSetOrEmpty(clientConfig.getScopes()))
                       .requireAuthorizationConsent(clientConfig.isRequireAuthorizationConsent())
                       .requirePkce(clientConfig.isRequirePkce())
+                      .userProviderConfig(mapUserProviderConfig(clientConfig.getUserProvider()))
                       .build();
 
               clients.put(client.getClientId(), client);
@@ -63,6 +65,18 @@ public class StaticClientRepositoryAdapter implements ClientRepository {
       return null;
     }
     return passwordEncoder.encode(secret);
+  }
+
+  private UserProviderConfig mapUserProviderConfig(
+      WedgeConfigProperties.UserProviderConfig config) {
+    if (config == null) {
+      return null;
+    }
+    return UserProviderConfig.builder()
+        .enabled(config.isEnabled())
+        .endpoint(config.getEndpoint())
+        .timeout(config.getTimeout())
+        .build();
   }
 
   @Override

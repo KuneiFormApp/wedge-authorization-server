@@ -21,14 +21,14 @@ public class User {
    */
   Map<String, Object> metadata;
 
-  public boolean hasRole(String role) {
-    if (metadata == null || !metadata.containsKey("roles")) {
+  public boolean hasAuthority(String authority) {
+    if (metadata == null || !metadata.containsKey("authorities")) {
       return false;
     }
-    Object roles = metadata.get("roles");
-    if (roles instanceof Iterable<?>) {
-      for (Object r : (Iterable<?>) roles) {
-        if (role.equals(r.toString())) {
+    Object authorities = metadata.get("authorities");
+    if (authorities instanceof Iterable<?>) {
+      for (Object a : (Iterable<?>) authorities) {
+        if (authority.equals(a.toString())) {
           return true;
         }
       }

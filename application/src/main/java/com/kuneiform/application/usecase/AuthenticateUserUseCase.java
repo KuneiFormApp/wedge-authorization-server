@@ -14,14 +14,20 @@ public class AuthenticateUserUseCase {
   private final UserProvider userProvider;
 
   /**
-   * Authenticates a user with username and password.
+   * Authenticates a user with username and password for a specific client.
    *
+   * @param clientId the client ID requesting authentication
    * @param username the username
    * @param password the password
    * @return Optional containing the authenticated User if successful, empty otherwise
    */
-  public Optional<User> execute(String username, String password) {
-    log.debug("Authenticating user: {}", username);
+  public Optional<User> execute(String clientId, String username, String password) {
+    log.debug("Authenticating user: {} for client: {}", username, clientId);
+
+    if (clientId == null || clientId.isBlank()) {
+      log.warn("Authentication failed: clientId is blank");
+      return Optional.empty();
+    }
 
     if (username == null || username.isBlank()) {
       log.warn("Authentication failed: username is blank");
@@ -33,12 +39,12 @@ public class AuthenticateUserUseCase {
       return Optional.empty();
     }
 
-    Optional<User> user = userProvider.validateCredentials(username, password);
+    Optional<User> user = userProvider.validateCredentials(clientId, username, password);
 
     if (user.isPresent()) {
-      log.info("User authenticated successfully: {}", username);
+      log.info("User authenticated successfully: {} for client: {}", username, clientId);
     } else {
-      log.warn("Authentication failed for user: {}", username);
+      log.warn("Authentication failed for user: {} for client: {}", username, clientId);
     }
 
     return user;

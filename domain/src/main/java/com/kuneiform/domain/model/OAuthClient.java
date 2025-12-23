@@ -26,6 +26,8 @@ public class OAuthClient {
   boolean requireAuthorizationConsent;
   boolean requirePkce;
 
+  UserProviderConfig userProviderConfig; // Configuration for user authentication
+
   // Checks if this is a public client (no client secret).
   public boolean isPublic() {
     return clientSecret == null || clientSecret.isBlank();

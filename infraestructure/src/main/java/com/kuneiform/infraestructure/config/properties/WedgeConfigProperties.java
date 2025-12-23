@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "wedge")
 public class WedgeConfigProperties {
 
-  private UserProviderConfig userProvider = new UserProviderConfig();
   private List<ClientConfig> clients = List.of();
   private SessionConfig session = new SessionConfig();
   private JwtConfig jwt = new JwtConfig();
@@ -35,6 +34,7 @@ public class WedgeConfigProperties {
     private List<String> scopes;
     private boolean requireAuthorizationConsent;
     private boolean requirePkce;
+    private UserProviderConfig userProvider = new UserProviderConfig();
   }
 
   @Data

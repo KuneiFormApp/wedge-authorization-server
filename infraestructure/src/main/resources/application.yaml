@@ -19,12 +19,6 @@ spring:
 
 # WedgeAuth Configuration
 wedge:
-  # User Provider Configuration (HTTP-based)
-  user-provider:
-    enabled: true
-    endpoint: ${USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
-    timeout: 5000 # milliseconds
-
   # OAuth Client Configuration (Static)
   clients:
     - client-id: public-spa-client
@@ -48,6 +42,11 @@ wedge:
         - write
       require-authorization-consent: false
       require-pkce: true
+      # User Provider Configuration for this client
+      user-provider:
+        enabled: true
+        endpoint: ${PUBLIC_SPA_USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
+        timeout: 5000 # milliseconds
 
     - client-id: confidential-backend-client
       client-secret: ${CONFIDENTIAL_CLIENT_SECRET:secret}
@@ -67,6 +66,11 @@ wedge:
         - admin
       require-authorization-consent: false
       require-pkce: false
+      # User Provider Configuration for this client
+      user-provider:
+        enabled: true
+        endpoint: ${CONFIDENTIAL_BACKEND_USER_PROVIDER_ENDPOINT:http://localhost:8082/api/users/validate}
+        timeout: 5000 # milliseconds
 
   # Session Storage Configuration
   session:
@@ -86,8 +90,8 @@ wedge:
   # JWT Configuration
   jwt:
     issuer: ${JWT_ISSUER:http://localhost:9001}
-    key-type: rsa # Options: rsa, ec
-    key-size: 2048 # For RSA: 2048, 4096; For EC: 256, 384, 512
+    key-type: rsa # Options: rsa, ECC(soon)
+    key-size: 2048 # For RSA: 2048, 4096; For ECC: 256, 384, 512
 
   # Supported Scopes
   scopes:

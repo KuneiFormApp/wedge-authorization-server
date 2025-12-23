@@ -23,10 +23,9 @@ public class ApplicationConfig {
   }
 
   @Bean
-  public RestClient restClient(WedgeConfigProperties config) {
+  public RestClient restClient() {
     JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory();
-    requestFactory.setReadTimeout(
-        java.time.Duration.ofMillis(config.getUserProvider().getTimeout()));
+    requestFactory.setReadTimeout(java.time.Duration.ofMillis(5000)); // Default timeout
 
     return RestClient.builder().requestFactory(requestFactory).build();
   }

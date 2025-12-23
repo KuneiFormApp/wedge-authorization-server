@@ -30,25 +30,25 @@ class UserTest {
         User.builder()
             .userId("user-123")
             .username("testuser")
-            .metadata(Map.of("roles", List.of("USER", "ADMIN")))
+            .metadata(Map.of("authorities", List.of("USER", "ADMIN")))
             .build();
 
-    assertTrue(user.hasRole("USER"));
-    assertTrue(user.hasRole("ADMIN"));
-    assertFalse(user.hasRole("SUPERADMIN"));
+    assertTrue(user.hasAuthority("USER"));
+    assertTrue(user.hasAuthority("ADMIN"));
+    assertFalse(user.hasAuthority("SUPERADMIN"));
   }
 
   @Test
   void shouldHandleMissingRolesMetadata() {
     User user = User.builder().userId("user-123").username("testuser").metadata(Map.of()).build();
 
-    assertFalse(user.hasRole("USER"));
+    assertFalse(user.hasAuthority("USER"));
   }
 
   @Test
   void shouldHandleNullMetadata() {
     User user = User.builder().userId("user-123").username("testuser").metadata(null).build();
 
-    assertFalse(user.hasRole("USER"));
+    assertFalse(user.hasAuthority("USER"));
   }
 }
