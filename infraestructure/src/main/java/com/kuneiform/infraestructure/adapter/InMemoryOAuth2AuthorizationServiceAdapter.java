@@ -77,8 +77,14 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
   public void save(OAuth2Authorization authorization) {
     String id = authorization.getId();
 
-    boolean isUpdate = authorizationCache.getIfPresent(id) != null;
+    OAuth2Authorization existingAuth = authorizationCache.getIfPresent(id);
+    boolean isUpdate = existingAuth != null;
     log.info("💾 SAVE called for authId={} ({})", id, isUpdate ? "UPDATE" : "CREATE");
+
+    if (isUpdate) {
+      // Clean up old indexes if tokens have changed (e.g. Refresh Token Rotation)
+      removeStaleTokenIndexes(existingAuth, authorization);
+    }
 
     // Store authorization by ID
     authorizationCache.put(id, authorization);
@@ -136,6 +142,21 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
       log.warn("❌ Authorization NOT found in cache for ID: {}", authId);
     } else {
       log.info("✅ Found authorization in cache");
+      // Debug: Compare requested token with current stored token
+      if (tokenType != null && OAuth2TokenType.REFRESH_TOKEN.equals(tokenType)) {
+        var currentRefresh = auth.getRefreshToken();
+        if (currentRefresh != null) {
+          String currentVal = currentRefresh.getToken().getTokenValue();
+          boolean match = currentVal.equals(token);
+          log.info(
+              "🔍 Reuse Check: Requested={}, CurrentStored={} (Match={})",
+              token.substring(0, Math.min(10, token.length())) + "...",
+              currentVal.substring(0, Math.min(10, currentVal.length())) + "...",
+              match);
+        } else {
+          log.warn("🔍 Reuse Check: No Refresh Token in stored authorization!");
+        }
+      }
     }
 
     return auth;
@@ -154,11 +175,43 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
 
     if (codeToken != null) {
       String tokenValue = codeToken.getToken().getTokenValue();
-      log.info(
-          "📌 Indexed authorization code: {}",
-          tokenValue.substring(0, Math.min(20, tokenValue.length())) + "...");
-      String indexKey = buildTokenIndexKey("code", tokenValue);
-      tokenIndexCache.put(indexKey, authId);
+      // Only index if not already present to avoid spamming logs
+      if (tokenIndexCache.getIfPresent(buildTokenIndexKey("code", tokenValue)) == null) {
+        log.info(
+            "📌 Indexed authorization code: {}",
+            tokenValue.substring(0, Math.min(20, tokenValue.length())) + "...");
+        String indexKey = buildTokenIndexKey("code", tokenValue);
+        tokenIndexCache.put(indexKey, authId);
+      }
+    }
+  }
+
+  private void removeStaleTokenIndexes(OAuth2Authorization oldAuth, OAuth2Authorization newAuth) {
+    // Check Refresh Token change
+    var oldRefresh = oldAuth.getRefreshToken();
+    var newRefresh = newAuth.getRefreshToken();
+    if (oldRefresh != null && newRefresh != null) {
+      String oldVal = oldRefresh.getToken().getTokenValue();
+      String newVal = newRefresh.getToken().getTokenValue();
+      if (!oldVal.equals(newVal)) {
+        String key = buildTokenIndexKey("refresh_token", oldVal);
+        tokenIndexCache.invalidate(key);
+        log.info(
+            "🧹 Removed stale refresh token index: {}",
+            key.substring(0, Math.min(30, key.length())) + "...");
+      }
+    }
+
+    // Check Access Token change
+    var oldAccess = oldAuth.getAccessToken();
+    var newAccess = newAuth.getAccessToken();
+    if (oldAccess != null && newAccess != null) {
+      String oldVal = oldAccess.getToken().getTokenValue();
+      String newVal = newAccess.getToken().getTokenValue();
+      if (!oldVal.equals(newVal)) {
+        String key = buildTokenIndexKey("access_token", oldVal);
+        tokenIndexCache.invalidate(key);
+      }
     }
   }
 
