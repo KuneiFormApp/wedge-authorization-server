@@ -137,7 +137,7 @@ public class SecurityConfig {
                 authorize
                     .requestMatchers("/login", "/error")
                     .permitAll() // Explicitly permit login and error pages
-                    .requestMatchers("/css/**", "/js/**", "/images/**")
+                    .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico")
                     .permitAll() // Allow static resources
                     .requestMatchers("/actuator/**")
                     .permitAll()

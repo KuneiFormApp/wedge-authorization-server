@@ -49,7 +49,7 @@ public class WedgeConfigProperties {
 
   @Data
   public static class RedisConfig {
-    private String host = "localhost";
+    private String host = "127.0.0.1";
     private int port = 6379;
     private String username = "";
     private String password = "";

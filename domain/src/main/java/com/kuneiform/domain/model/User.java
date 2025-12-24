@@ -1,5 +1,6 @@
 package com.kuneiform.domain.model;
 
+import java.io.Serializable;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
@@ -10,7 +11,8 @@ import lombok.Value;
  */
 @Value
 @Builder
-public class User {
+public class User implements Serializable {
+  private static final long serialVersionUID = 1L;
   String userId;
   String username;
   String email;

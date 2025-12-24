@@ -49,14 +49,17 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
   private RedisTemplate<String, OAuth2Authorization> redisAuthTemplate;
   private RedisTemplate<String, String> redisIndexTemplate;
 
-  private static final String REDIS_NAMESPACE = "wedge:oauth2:";
-  private static final String AUTH_KEY_PREFIX = REDIS_NAMESPACE + "auth:";
-  private static final String INDEX_KEY_PREFIX = REDIS_NAMESPACE + "index:";
+  private String namespace;
+  private static final String AUTH_KEY_PREFIX = "auth:";
+  private static final String INDEX_KEY_PREFIX = "index:";
 
   @PostConstruct
   public void init() {
     long maxTtl = config.getTokenStorage().getMaxTtl();
     int maxSize = config.getTokenStorage().getMaxSize();
+
+    String configNamespace = config.getTokenStorage().getRedis().getNamespace();
+    this.namespace = configNamespace.endsWith(":") ? configNamespace : configNamespace + ":";
 
     // Initialize L1 Caffeine Caches
     // We set a short TTL for L1 to ensure we eventually fetch fresh data from Redis
@@ -92,7 +95,8 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
     this.redisIndexTemplate.afterPropertiesSet();
 
     log.info(
-        "Redis+Caffeine OAuth2AuthorizationService initialized. L1 TTL: {}s, L2 TTL: {}s",
+        "Redis+Caffeine OAuth2AuthorizationService initialized. Namespace: {}, L1 TTL: {}s, L2 TTL: {}s",
+        this.namespace,
         localTtl,
         maxTtl);
   }
@@ -289,11 +293,11 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
   }
 
   private String buildAuthKey(String id) {
-    return AUTH_KEY_PREFIX + id;
+    return this.namespace + AUTH_KEY_PREFIX + id;
   }
 
   private String buildIndexKey(String suffix) {
-    return INDEX_KEY_PREFIX + suffix;
+    return this.namespace + INDEX_KEY_PREFIX + suffix;
   }
 
   private String buildTokenIndexKeySuffix(OAuth2TokenType type, String value) {

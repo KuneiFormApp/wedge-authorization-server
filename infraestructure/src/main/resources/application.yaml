@@ -79,10 +79,10 @@ wedge:
     ttl: 600 # seconds (10 minutes) - applies to both in-memory and Redis
     max-size: 10000 # Max sessions in cache (for in-memory storage only)
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      username: ${REDIS_USERNAME:}
+      password: ${REDIS_PASSWORD:passwordtest}
+      username: ${REDIS_USERNAME:redistest}
       database: ${REDIS_DATABASE:0}
       namespace: ${REDIS_SESSION_NAMESPACE:wedge:session} # Key prefix for all session keys
       ssl:
