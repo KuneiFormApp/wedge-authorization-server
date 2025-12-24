@@ -2,6 +2,7 @@ package com.kuneiform.infraestructure.config;
 
 import com.kuneiform.domain.model.OAuthClient;
 import com.kuneiform.domain.port.ClientRepository;
+import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
 import java.time.Duration;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.server.authorization.settings.TokenSe
 public class OAuth2ClientConfig {
 
   private final ClientRepository clientRepository;
+  private final WedgeConfigProperties properties;
 
   /** RegisteredClientRepository that bridges our domain model to Spring's RegisteredClient. */
   @Bean
@@ -104,12 +106,25 @@ public class OAuth2ClientConfig {
 
     TokenSettings tokenSettings =
         TokenSettings.builder()
-            .accessTokenTimeToLive(Duration.ofMinutes(30))
-            .refreshTokenTimeToLive(Duration.ofDays(30))
+            .accessTokenTimeToLive(
+                Duration.ofSeconds(properties.getOauth2().getTokens().getAccessTokenTtl()))
+            .refreshTokenTimeToLive(
+                Duration.ofSeconds(properties.getOauth2().getTokens().getRefreshTokenTtl()))
+            .reuseRefreshTokens(false) // Enable OAuth 2.1 refresh token rotation
             .build();
 
     builder.tokenSettings(tokenSettings);
 
-    return builder.build();
+    RegisteredClient registeredClient = builder.build();
+
+    // Debug logging
+    log.debug(
+        "Registered client: id={}, grantTypes={}, scopes={}, tokenSettings.reuseRefreshTokens={}",
+        registeredClient.getClientId(),
+        registeredClient.getAuthorizationGrantTypes(),
+        registeredClient.getScopes(),
+        registeredClient.getTokenSettings().isReuseRefreshTokens());
+
+    return registeredClient;
   }
 }

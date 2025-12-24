@@ -40,6 +40,7 @@ wedge:
         - email
         - read
         - write
+        - offline_access  # Required for refresh token issuance
       require-authorization-consent: false
       require-pkce: true
       # User Provider Configuration for this client
@@ -87,6 +88,22 @@ wedge:
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
 
+  # OAuth2 Token Configuration
+  oauth2:
+    tokens:
+      refresh-token-enabled: ${REFRESH_TOKEN_ENABLED:true}  # Enable/disable refresh tokens
+      access-token-ttl: ${ACCESS_TOKEN_TTL:1800}  # 30 minutes (in seconds)
+      refresh-token-ttl: ${REFRESH_TOKEN_TTL:2592000}  # 30 days (in seconds)
+
+  # OAuth2 Token Storage Configuration
+  token-storage:
+    type: ${TOKEN_STORAGE_TYPE:in-memory}  # Options: in-memory, redis
+    max-ttl: 2592000  # Max storage TTL (30 days) - used as fallback/cap
+    max-size: 50000  # Max authorizations in Caffeine cache
+    redis:
+      namespace: ${REDIS_TOKEN_NAMESPACE:wedge:oauth2:auth}
+      # Inherits connection settings from session.redis
+
   # JWT Configuration
   jwt:
     issuer: ${JWT_ISSUER:http://localhost:9001}
@@ -107,12 +124,16 @@ wedge:
       description: Write access
     - name: admin
       description: Administrative access
+    - name: offline_access
+      description: Offline access for refresh tokens
 
 # Logging
 logging:
   level:
     root: INFO
     com.kuneiform: DEBUG
+    com.kuneiform.infraestructure.config.OAuth2TokenGeneratorConfig: DEBUG
+    org.springframework.security.oauth2.server.authorization.token: DEBUG
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: TRACE
 

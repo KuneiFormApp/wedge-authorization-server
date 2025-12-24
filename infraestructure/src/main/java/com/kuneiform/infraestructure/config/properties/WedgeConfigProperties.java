@@ -12,6 +12,8 @@ public class WedgeConfigProperties {
 
   private List<ClientConfig> clients = List.of();
   private SessionConfig session = new SessionConfig();
+  private OAuth2Config oauth2 = new OAuth2Config();
+  private TokenStorageConfig tokenStorage = new TokenStorageConfig();
   private JwtConfig jwt = new JwtConfig();
   private List<ScopeConfig> scopes = List.of();
 
@@ -72,5 +74,25 @@ public class WedgeConfigProperties {
   public static class ScopeConfig {
     private String name;
     private String description;
+  }
+
+  @Data
+  public static class OAuth2Config {
+    private TokenConfig tokens = new TokenConfig();
+
+    @Data
+    public static class TokenConfig {
+      private boolean refreshTokenEnabled = true; // Enable/disable refresh tokens
+      private long accessTokenTtl = 1800; // 30 minutes
+      private long refreshTokenTtl = 2592000; // 30 days
+    }
+  }
+
+  @Data
+  public static class TokenStorageConfig {
+    private String type = "in-memory";
+    private long maxTtl = 2592000; // Max 30 days
+    private int maxSize = 50000;
+    private RedisConfig redis = new RedisConfig();
   }
 }

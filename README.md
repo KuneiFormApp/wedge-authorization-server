@@ -162,7 +162,7 @@ WedgeAuth is designed to:
 
 ## 📄 License
 
-Apache License 2.0
+AGPLv3 Licens
 
 ---
 
