@@ -135,6 +135,7 @@ logging:
     com.kuneiform.infraestructure.config.OAuth2TokenGeneratorConfig: DEBUG
     org.springframework.security.oauth2.server.authorization.token: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.security.web: TRACE
     org.springframework.security.oauth2: TRACE
 
 management:

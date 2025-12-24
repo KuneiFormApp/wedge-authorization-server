@@ -23,12 +23,18 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Configuration
@@ -38,36 +44,77 @@ public class SecurityConfig {
 
   private final WedgeConfigProperties config;
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
-            throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                new OAuth2AuthorizationServerConfigurer();
+  @Bean
+  @Order(1)
+  public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
+      throws Exception {
+    OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+        new OAuth2AuthorizationServerConfigurer();
 
-        // Matcher para todos los endpoints (authorize, token, jwk, etc.)
-        RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
+    // Matcher for all OAuth2 endpoints (authorize, token, jwk, etc.)
+    RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
 
-        http
-                .securityMatcher(endpointsMatcher)
-                .authorizeHttpRequests(authorize -> authorize
-                        //TODO: FIX THIS:
-                        .requestMatchers("/oauth2/token").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
-                .with(authorizationServerConfigurer, configurer ->
-                        configurer.oidc(Customizer.withDefaults())
-                )
-                .exceptionHandling(exceptions ->
-                        exceptions.defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint("/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                        )
-                );
+    http.securityMatcher(endpointsMatcher)
+        .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+        .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+        .with(
+            authorizationServerConfigurer,
+            configurer ->
+                configurer
+                    .clientAuthentication(
+                        clientAuth ->
+                            clientAuth.authenticationConverter(
+                                new org.springframework.security.web.authentication
+                                    .DelegatingAuthenticationConverter(
+                                    java.util.Arrays.asList(
+                                        new org.springframework.security.oauth2.server.authorization
+                                            .web.authentication
+                                            .JwtClientAssertionAuthenticationConverter(),
+                                        new org.springframework.security.oauth2.server.authorization
+                                            .web.authentication
+                                            .ClientSecretBasicAuthenticationConverter(),
+                                        new org.springframework.security.oauth2.server.authorization
+                                            .web.authentication
+                                            .ClientSecretPostAuthenticationConverter(),
+                                        new org.springframework.security.oauth2.server.authorization
+                                            .web.authentication
+                                            .PublicClientAuthenticationConverter(),
+                                        // Custom converter for Public Client Refresh Token Grant
+                                        request -> {
+                                          String grantType =
+                                              request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
+                                          String clientId =
+                                              request.getParameter(OAuth2ParameterNames.CLIENT_ID);
+                                          String clientSecret =
+                                              request.getParameter(
+                                                  OAuth2ParameterNames.CLIENT_SECRET);
 
-        return http.build();
-    }
+                                          if (AuthorizationGrantType.REFRESH_TOKEN
+                                                  .getValue()
+                                                  .equals(grantType)
+                                              && StringUtils.hasText(clientId)
+                                              && !StringUtils.hasText(clientSecret)) {
+                                            return new OAuth2ClientAuthenticationToken(
+                                                clientId,
+                                                ClientAuthenticationMethod.NONE,
+                                                null,
+                                                null);
+                                          }
+                                          return null;
+                                        }))))
+                    .authorizationEndpoint(Customizer.withDefaults())
+                    .tokenEndpoint(Customizer.withDefaults())
+                    .oidc(Customizer.withDefaults()))
+        // Use SecurityContextHolderFilter as the anchor for ordering to avoid "no order" errors
+        .addFilterAfter(new RequestParameterLoggingFilter(), SecurityContextHolderFilter.class)
+        .exceptionHandling(
+            exceptions ->
+                exceptions.defaultAuthenticationEntryPointFor(
+                    new LoginUrlAuthenticationEntryPoint("/login"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)));
+
+    return http.build();
+  }
 
   @Bean
   @Order(2)
