@@ -2,6 +2,7 @@ package com.kuneiform.infraestructure.config;
 
 import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
 import com.kuneiform.infraestructure.security.HttpUserAuthenticationProvider;
+import com.kuneiform.infraestructure.security.PublicClientRefreshTokenAuthenticationProvider;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -20,27 +21,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StringUtils;
@@ -52,7 +45,8 @@ import org.springframework.util.StringUtils;
 public class SecurityConfig {
 
   private final WedgeConfigProperties config;
-  private final RegisteredClientRepository registeredClientRepository;
+  private final PublicClientRefreshTokenAuthenticationProvider
+      publicClientRefreshTokenAuthenticationProvider;
 
   @Bean
   @Order(1)
@@ -120,14 +114,11 @@ public class SecurityConfig {
 
                           // Add custom provider for Public Client Refresh Token flow
                           clientAuth.authenticationProvider(
-                              new PublicClientRefreshTokenAuthenticationProvider(
-                                  registeredClientRepository));
+                              publicClientRefreshTokenAuthenticationProvider);
                         })
                     .authorizationEndpoint(Customizer.withDefaults())
                     .tokenEndpoint(Customizer.withDefaults())
                     .oidc(Customizer.withDefaults()))
-        // Use SecurityContextHolderFilter as the anchor for ordering to avoid "no order" errors
-        .addFilterAfter(new RequestParameterLoggingFilter(), SecurityContextHolderFilter.class)
         .exceptionHandling(
             exceptions ->
                 exceptions.defaultAuthenticationEntryPointFor(
@@ -198,66 +189,5 @@ public class SecurityConfig {
   @Bean
   public AuthorizationServerSettings authorizationServerSettings() {
     return AuthorizationServerSettings.builder().issuer(config.getJwt().getIssuer()).build();
-  }
-
-  /**
-   * Custom AuthenticationProvider that allows public clients to authenticate specifically for the
-   * refresh_token grant without requiring proof (code_verifier).
-   */
-  private static class PublicClientRefreshTokenAuthenticationProvider
-      implements AuthenticationProvider {
-    private final RegisteredClientRepository registeredClientRepository;
-
-    public PublicClientRefreshTokenAuthenticationProvider(
-        RegisteredClientRepository registeredClientRepository) {
-      this.registeredClientRepository = registeredClientRepository;
-    }
-
-    @Override
-    public Authentication authenticate(Authentication authentication)
-        throws AuthenticationException {
-      OAuth2ClientAuthenticationToken clientAuthentication =
-          (OAuth2ClientAuthenticationToken) authentication;
-
-      // Only handle ClientAuthenticationMethod.NONE
-      if (!ClientAuthenticationMethod.NONE.equals(
-          clientAuthentication.getClientAuthenticationMethod())) {
-        return null;
-      }
-
-      // Check if this is a refresh_token grant request
-      // (This requires our custom converter to have put the grant_type in parameters)
-      Object grantType =
-          clientAuthentication.getAdditionalParameters().get(OAuth2ParameterNames.GRANT_TYPE);
-      if (!AuthorizationGrantType.REFRESH_TOKEN.getValue().equals(grantType)) {
-        return null; // Let the standard provider handle other flows (like authorization_code which
-        // needs PKCE)
-      }
-
-      String clientId = clientAuthentication.getPrincipal().toString();
-      RegisteredClient registeredClient = this.registeredClientRepository.findByClientId(clientId);
-
-      if (registeredClient == null) {
-        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
-      }
-
-      if (!registeredClient
-          .getClientAuthenticationMethods()
-          .contains(ClientAuthenticationMethod.NONE)) {
-        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
-      }
-
-      if (log.isDebugEnabled()) {
-        log.debug("Authenticated public client for refresh token: {}", clientId);
-      }
-
-      return new OAuth2ClientAuthenticationToken(
-          registeredClient, ClientAuthenticationMethod.NONE, null);
-    }
-
-    @Override
-    public boolean supports(Class<?> authentication) {
-      return OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication);
-    }
   }
 }

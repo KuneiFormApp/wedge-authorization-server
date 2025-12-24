@@ -79,7 +79,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
 
     OAuth2Authorization existingAuth = authorizationCache.getIfPresent(id);
     boolean isUpdate = existingAuth != null;
-    log.info("💾 SAVE called for authId={} ({})", id, isUpdate ? "UPDATE" : "CREATE");
+    log.debug("💾 SAVE called for authId={} ({})", id, isUpdate ? "UPDATE" : "CREATE");
 
     if (isUpdate) {
       // Clean up old indexes if tokens have changed (e.g. Refresh Token Rotation)
@@ -92,7 +92,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
     // Create indexes for fast token lookup
     createTokenIndexes(authorization);
 
-    log.info("✅ Saved authorization: id={}, principal={}", id, authorization.getPrincipalName());
+    log.debug("✅ Saved authorization: id={}, principal={}", id, authorization.getPrincipalName());
   }
 
   @Override
@@ -119,7 +119,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
       return null;
     }
 
-    log.info(
+    log.debug(
         "🔍 Looking for token: type={}, value={}",
         tokenType != null ? tokenType.getValue() : "null",
         token.substring(0, Math.min(20, token.length())) + "...");
@@ -133,7 +133,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
       return null;
     }
 
-    log.info("✅ Found auth ID in index: {}", authId);
+    log.debug("✅ Found auth ID in index: {}", authId);
 
     // Get from main cache
     OAuth2Authorization auth = authorizationCache.getIfPresent(authId);
@@ -141,14 +141,14 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
     if (auth == null) {
       log.warn("❌ Authorization NOT found in cache for ID: {}", authId);
     } else {
-      log.info("✅ Found authorization in cache");
+      log.debug("✅ Found authorization in cache");
       // Debug: Compare requested token with current stored token
       if (tokenType != null && OAuth2TokenType.REFRESH_TOKEN.equals(tokenType)) {
         var currentRefresh = auth.getRefreshToken();
         if (currentRefresh != null) {
           String currentVal = currentRefresh.getToken().getTokenValue();
           boolean match = currentVal.equals(token);
-          log.info(
+          log.debug(
               "🔍 Reuse Check: Requested={}, CurrentStored={} (Match={})",
               token.substring(0, Math.min(10, token.length())) + "...",
               currentVal.substring(0, Math.min(10, currentVal.length())) + "...",
@@ -177,7 +177,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
       String tokenValue = codeToken.getToken().getTokenValue();
       // Only index if not already present to avoid spamming logs
       if (tokenIndexCache.getIfPresent(buildTokenIndexKey("code", tokenValue)) == null) {
-        log.info(
+        log.debug(
             "📌 Indexed authorization code: {}",
             tokenValue.substring(0, Math.min(20, tokenValue.length())) + "...");
         String indexKey = buildTokenIndexKey("code", tokenValue);
@@ -196,7 +196,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
       if (!oldVal.equals(newVal)) {
         String key = buildTokenIndexKey("refresh_token", oldVal);
         tokenIndexCache.invalidate(key);
-        log.info(
+        log.debug(
             "🧹 Removed stale refresh token index: {}",
             key.substring(0, Math.min(30, key.length())) + "...");
       }
@@ -221,7 +221,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
       String tokenValue = token.getToken().getTokenValue();
       String indexKey = buildTokenIndexKey(tokenTypeValue, tokenValue);
       tokenIndexCache.put(indexKey, authId);
-      log.info(
+      log.debug(
           "📌 Indexed token: type={}, key={}, authId={}",
           tokenTypeValue,
           indexKey.substring(0, Math.min(30, indexKey.length())) + "...",
