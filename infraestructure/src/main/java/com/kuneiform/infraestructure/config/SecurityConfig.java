@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -25,6 +26,9 @@ import org.springframework.security.config.annotation.web.configurers.oauth2.ser
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Slf4j
 @Configuration
@@ -35,26 +39,22 @@ public class SecurityConfig {
   private final WedgeConfigProperties config;
 
   @Bean
-  @Order(1)
-  public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
-      throws Exception {
-    // Apply and configure OAuth2 Authorization Server
-    OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-        new OAuth2AuthorizationServerConfigurer();
+    @Order(1)
+  public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+    OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
 
-    http.with(
-        authorizationServerConfigurer,
-        configurer -> configurer.oidc(Customizer.withDefaults())); // Enable OpenID
-    // Connect 1.0
+    RequestMatcher endpointsMatcher = authorizationServerConfigurer.getEndpointsMatcher();
 
-    http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+    http
+        .securityMatcher(endpointsMatcher)
         .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
-        .csrf(
-            csrf ->
-                csrf.ignoringRequestMatchers(
-                    authorizationServerConfigurer.getEndpointsMatcher())) // Disable CSRF
-        // for OAuth2
-        // endpoints
+        .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+        .with(authorizationServerConfigurer, configurer -> configurer
+            .oidc(Customizer.withDefaults()))
+        .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
+            new LoginUrlAuthenticationEntryPoint("/login"),
+            new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+
         .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()));
 
     return http.build();
@@ -65,16 +65,15 @@ public class SecurityConfig {
   public SecurityFilterChain defaultSecurityFilterChain(
       HttpSecurity http, HttpUserAuthenticationProvider authenticationProvider) throws Exception {
     http.authorizeHttpRequests(
-            authorize ->
-                authorize
-                    .requestMatchers("/login", "/error")
-                    .permitAll() // Explicitly permit login and error pages
-                    .requestMatchers("/css/**", "/js/**", "/images/**")
-                    .permitAll() // Allow static resources
-                    .requestMatchers("/actuator/**")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
+        authorize -> authorize
+            .requestMatchers("/login", "/error")
+            .permitAll() // Explicitly permit login and error pages
+            .requestMatchers("/css/**", "/js/**", "/images/**")
+            .permitAll() // Allow static resources
+            .requestMatchers("/actuator/**")
+            .permitAll()
+            .anyRequest()
+            .authenticated())
         .formLogin(form -> form.loginPage("/login").permitAll().failureUrl("/login?error=true"))
         .logout(logout -> logout.logoutSuccessUrl("/login?logout=true").permitAll())
         .authenticationProvider(authenticationProvider);
@@ -89,11 +88,10 @@ public class SecurityConfig {
     RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
     RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
 
-    RSAKey rsaKey =
-        new RSAKey.Builder(publicKey)
-            .privateKey(privateKey)
-            .keyID(UUID.randomUUID().toString())
-            .build();
+    RSAKey rsaKey = new RSAKey.Builder(publicKey)
+        .privateKey(privateKey)
+        .keyID(UUID.randomUUID().toString())
+        .build();
 
     JWKSet jwkSet = new JWKSet(rsaKey);
     return new ImmutableJWKSet<>(jwkSet);
