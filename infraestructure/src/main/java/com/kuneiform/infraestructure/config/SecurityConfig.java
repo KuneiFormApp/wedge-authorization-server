@@ -42,21 +42,19 @@ public class SecurityConfig {
   public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
       throws Exception {
     // Apply and configure OAuth2 Authorization Server
-    OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-        new OAuth2AuthorizationServerConfigurer();
+    OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = new OAuth2AuthorizationServerConfigurer();
 
     http.with(
         authorizationServerConfigurer,
         configurer -> configurer.oidc(Customizer.withDefaults())); // Enable OpenID
     // Connect 1.0
 
-    http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-        .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
-        .exceptionHandling(
-            exceptions ->
-                exceptions.defaultAuthenticationEntryPointFor(
-                    new LoginUrlAuthenticationEntryPoint("/login"),
-                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+    OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+
+    http.exceptionHandling(
+        exceptions -> exceptions.defaultAuthenticationEntryPointFor(
+            new LoginUrlAuthenticationEntryPoint("/login"),
+            new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
         .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()));
 
     return http.build();
@@ -67,16 +65,15 @@ public class SecurityConfig {
   public SecurityFilterChain defaultSecurityFilterChain(
       HttpSecurity http, HttpUserAuthenticationProvider authenticationProvider) throws Exception {
     http.authorizeHttpRequests(
-            authorize ->
-                authorize
-                    .requestMatchers("/login", "/error")
-                    .permitAll() // Explicitly permit login and error pages
-                    .requestMatchers("/css/**", "/js/**", "/images/**")
-                    .permitAll() // Allow static resources
-                    .requestMatchers("/actuator/**")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
+        authorize -> authorize
+            .requestMatchers("/login", "/error")
+            .permitAll() // Explicitly permit login and error pages
+            .requestMatchers("/css/**", "/js/**", "/images/**")
+            .permitAll() // Allow static resources
+            .requestMatchers("/actuator/**")
+            .permitAll()
+            .anyRequest()
+            .authenticated())
         .formLogin(form -> form.loginPage("/login").permitAll().failureUrl("/login?error=true"))
         .logout(logout -> logout.logoutSuccessUrl("/login?logout=true").permitAll())
         .authenticationProvider(authenticationProvider);
@@ -91,11 +88,10 @@ public class SecurityConfig {
     RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
     RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
 
-    RSAKey rsaKey =
-        new RSAKey.Builder(publicKey)
-            .privateKey(privateKey)
-            .keyID(UUID.randomUUID().toString())
-            .build();
+    RSAKey rsaKey = new RSAKey.Builder(publicKey)
+        .privateKey(privateKey)
+        .keyID(UUID.randomUUID().toString())
+        .build();
 
     JWKSet jwkSet = new JWKSet(rsaKey);
     return new ImmutableJWKSet<>(jwkSet);
