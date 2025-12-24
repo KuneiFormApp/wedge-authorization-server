@@ -145,14 +145,8 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
     String authId = authorization.getId();
 
     // Index all token types using class-based keys (Spring stores tokens by class, not string keys)
-    indexToken(
-        authorization.getToken(OAuth2AccessToken.class),
-        "access_token",
-        authId);
-    indexToken(
-        authorization.getToken(OAuth2RefreshToken.class),
-        "refresh_token",
-        authId);
+    indexToken(authorization.getToken(OAuth2AccessToken.class), "access_token", authId);
+    indexToken(authorization.getToken(OAuth2RefreshToken.class), "refresh_token", authId);
     indexToken(authorization.getToken("id_token"), "id_token", authId);
 
     OAuth2Authorization.Token<OAuth2AuthorizationCode> codeToken =
