@@ -60,6 +60,9 @@ class RedisSessionStorageAdapterIntegrationTest {
     registry.add("wedge.session.redis.port", redis::getRedisPort);
     registry.add("wedge.session.redis.namespace", () -> "wedge:test");
     registry.add("wedge.session.ttl", () -> "60");
+    // Overwrite any defaults to empty for Testcontainers (which has no password by default)
+    registry.add("wedge.session.redis.username", () -> "");
+    registry.add("wedge.session.redis.password", () -> "");
   }
 
   @Autowired private RedisSessionStorageAdapter adapter;
