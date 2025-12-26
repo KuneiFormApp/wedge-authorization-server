@@ -66,8 +66,10 @@ public class WedgeConfigProperties {
   @Data
   public static class JwtConfig {
     private String issuer;
-    private String keyType = "rsa";
+    private String keyType = "test";
     private int keySize = 2048;
+    private String privateKeyPath;
+    private String publicKeyPath;
   }
 
   @Data

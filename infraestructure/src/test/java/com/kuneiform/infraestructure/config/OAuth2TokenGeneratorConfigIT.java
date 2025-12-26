@@ -30,7 +30,8 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
  * <p>This test verifies that the OAuth2TokenGenerator is properly configured with custom token
  * customizers (like WedgeTokenCustomizer).
  */
-@SpringBootTest(classes = {OAuth2TokenGeneratorConfig.class, OAuth2TokenGeneratorConfigIT.TestConfig.class})
+@SpringBootTest(
+    classes = {OAuth2TokenGeneratorConfig.class, OAuth2TokenGeneratorConfigIT.TestConfig.class})
 @EnableConfigurationProperties(WedgeConfigProperties.class)
 class OAuth2TokenGeneratorConfigIT {
 
@@ -42,12 +43,13 @@ class OAuth2TokenGeneratorConfigIT {
       KeyPair keyPair = generateRsaKey();
       RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
       RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-      
-      RSAKey rsaKey = new RSAKey.Builder(publicKey)
-          .privateKey(privateKey)
-          .keyID(UUID.randomUUID().toString())
-          .build();
-      
+
+      RSAKey rsaKey =
+          new RSAKey.Builder(publicKey)
+              .privateKey(privateKey)
+              .keyID(UUID.randomUUID().toString())
+              .build();
+
       JWKSet jwkSet = new JWKSet(rsaKey);
       return new ImmutableJWKSet<>(jwkSet);
     }

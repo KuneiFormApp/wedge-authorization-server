@@ -1,5 +1,6 @@
 package com.kuneiform.infraestructure.config;
 
+import com.kuneiform.domain.port.JwtKeyProvider;
 import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
 import com.kuneiform.infraestructure.security.HttpUserAuthenticationProvider;
 import com.kuneiform.infraestructure.security.PublicClientRefreshTokenAuthenticationProvider;
@@ -8,13 +9,8 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -45,6 +41,7 @@ import org.springframework.util.StringUtils;
 public class SecurityConfig {
 
   private final WedgeConfigProperties config;
+  private final JwtKeyProvider jwtKeyProvider;
   private final PublicClientRefreshTokenAuthenticationProvider
       publicClientRefreshTokenAuthenticationProvider;
 
@@ -153,31 +150,16 @@ public class SecurityConfig {
   // JWK source for JWT signing
   @Bean
   public JWKSource<SecurityContext> jwkSource() {
-    KeyPair keyPair = generateRsaKey();
-    RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-    RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+    var keyPair = jwtKeyProvider.getKeyPair();
 
     RSAKey rsaKey =
-        new RSAKey.Builder(publicKey)
-            .privateKey(privateKey)
-            .keyID(UUID.randomUUID().toString())
+        new RSAKey.Builder(keyPair.getPublicKey())
+            .privateKey(keyPair.getPrivateKey())
+            .keyID(keyPair.getKeyId())
             .build();
 
     JWKSet jwkSet = new JWKSet(rsaKey);
     return new ImmutableJWKSet<>(jwkSet);
-  }
-
-  private KeyPair generateRsaKey() {
-    try {
-      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-      keyPairGenerator.initialize(config.getJwt().getKeySize());
-      KeyPair keyPair = keyPairGenerator.generateKeyPair();
-      log.info(
-          "Generated RSA key pair for JWT signing (key size: {})", config.getJwt().getKeySize());
-      return keyPair;
-    } catch (Exception ex) {
-      throw new IllegalStateException("Failed to generate RSA key pair", ex);
-    }
   }
 
   // JWT decoder for validating tokens

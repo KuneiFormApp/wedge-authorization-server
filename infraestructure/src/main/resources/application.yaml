@@ -91,7 +91,7 @@ wedge:
   # OAuth2 Token Configuration
   oauth2:
     tokens:
-      refresh-token-enabled: ${REFRESH_TOKEN_ENABLED:true}  # Enable/disable refresh tokens
+      refresh-token-enabled: ${wedge.session.storage-type}  # Enable/disable refresh tokens
       access-token-ttl: ${ACCESS_TOKEN_TTL:1800}  # 30 minutes (in seconds)
       refresh-token-ttl: ${REFRESH_TOKEN_TTL:2592000}  # 30 days (in seconds)
 
@@ -107,8 +107,10 @@ wedge:
   # JWT Configuration
   jwt:
     issuer: ${JWT_ISSUER:http://localhost:9001}
-    key-type: rsa # Options: rsa, ECC(soon)
-    key-size: 2048 # For RSA: 2048, 4096; For ECC: 256, 384, 512
+    key-type: ${JWT_KEY_TYPE:test} # Options: test, file
+    key-size: ${JWT_KEY_SIZE:2048} # Only used when key-type=test (2048, 4096)
+    private-key-path: ${JWT_PRIVATE_KEY_PATH:} # Required when key-type=file
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:} # Required when key-type=file
 
   # Supported Scopes
   scopes:
