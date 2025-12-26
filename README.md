@@ -59,25 +59,29 @@ Optional (via database):
 
 ### 🖥 Login UI
 - Built-in login page (Thymeleaf)
-- Customizable templates
-- External login UI support
+- Customizable templates located at:
+    - `infraestructure/src/main/resources/templates/login.html`
+    - `infraestructure/src/main/resources/static/css/`
+    - `infraestructure/src/main/resources/static/js/`
+- External login UI support (bring your own UI)
 - Headless-first design
 
 ---
 
-### 🌐 Social Login (Optional)
-- OAuth login via external identity providers:
-    - Google
-    - Facebook
-    - Others (extensible)
-- Fully configurable via `application.yml`
-- After successful social login:
-    - User is resolved
-    - Metadata is mapped
-    - **WedgeAuth issues its own tokens**
+### 🌐 Social Login *(Coming Soon)*
+> **Status**: Planned feature, not yet implemented
 
-> External providers authenticate the user.  
-> **WedgeAuth remains the token issuer.**
+Future support for OAuth login via external identity providers:
+- Google
+- Facebook
+- GitHub
+- Others (extensible)
+
+When implemented, this will:
+- Be fully configurable via `application.yml` or environment variables
+- Allow external providers to authenticate users
+- Resolve and map user metadata
+- **WedgeAuth will remain the token issuer**
 
 ---
 
@@ -96,7 +100,6 @@ These features are **disabled by default** and can be enabled by configuration.
 - JDBC-based persistence (PostgreSQL)
 - Persistent OAuth clients
 - Refresh tokens & rotation
-- Token revocation persistence
 - Multiple login providers
 - External login UI
 - Multi-tenant support (planned)
@@ -120,12 +123,13 @@ These features are **disabled by default** and can be enabled by configuration.
 
 ## 🎯 Design Principles
 
-- Headless by design
-- Secure by default
-- Configuration over convention
-- Progressive complexity
-- Framework as an infrastructure detail
-- Hexagonal architecture
+- **Headless by design** — No vendor lock-in
+- **Secure by default** — Best practices baked in
+- **Configuration over convention** — YAML-driven setup
+- **Progressive complexity** — Start simple, scale when needed
+- **Framework as an infrastructure detail** — Domain logic stays pure
+- **Hexagonal architecture** — Ports and adapters pattern
+- **Avoid vendor lock-in** — Own your auth, own your users, own your data
 
 ---
 
@@ -162,7 +166,7 @@ WedgeAuth is designed to:
 
 ## 📄 License
 
-AGPLv3 Licens
+AGPLv3 License
 
 ---
 
