@@ -7,33 +7,33 @@ import org.junit.jupiter.api.Test;
 
 class RuntimeJwtKeyProviderAdapterTest {
 
-    @Test
-    void shouldGenerateKeyPairWith2048Bits() {
-        // Given
-        int keySize = 2048;
-        RuntimeJwtKeyProviderAdapter adapter = new RuntimeJwtKeyProviderAdapter(keySize);
+  @Test
+  void shouldGenerateKeyPairWith2048Bits() {
+    // Given
+    int keySize = 2048;
+    RuntimeJwtKeyProviderAdapter adapter = new RuntimeJwtKeyProviderAdapter(keySize);
 
-        // When
-        JwtKeyPair keyPair = adapter.getKeyPair();
+    // When
+    JwtKeyPair keyPair = adapter.getKeyPair();
 
-        // Then
-        assertNotNull(keyPair);
-        assertNotNull(keyPair.getPublicKey());
-        assertNotNull(keyPair.getPrivateKey());
-        assertNotNull(keyPair.getKeyId());
-        assertEquals(keySize, keyPair.getPublicKey().getModulus().bitLength());
-    }
+    // Then
+    assertNotNull(keyPair);
+    assertNotNull(keyPair.getPublicKey());
+    assertNotNull(keyPair.getPrivateKey());
+    assertNotNull(keyPair.getKeyId());
+    assertEquals(keySize, keyPair.getPublicKey().getModulus().bitLength());
+  }
 
-    @Test
-    void shouldCacheGeneratedKeyPair() {
-        // Given
-        RuntimeJwtKeyProviderAdapter adapter = new RuntimeJwtKeyProviderAdapter(2048);
+  @Test
+  void shouldCacheGeneratedKeyPair() {
+    // Given
+    RuntimeJwtKeyProviderAdapter adapter = new RuntimeJwtKeyProviderAdapter(2048);
 
-        // When
-        JwtKeyPair keyPair1 = adapter.getKeyPair();
-        JwtKeyPair keyPair2 = adapter.getKeyPair();
+    // When
+    JwtKeyPair keyPair1 = adapter.getKeyPair();
+    JwtKeyPair keyPair2 = adapter.getKeyPair();
 
-        // Then
-        assertSame(keyPair1, keyPair2, "Should return the same cached instance");
-    }
+    // Then
+    assertSame(keyPair1, keyPair2, "Should return the same cached instance");
+  }
 }

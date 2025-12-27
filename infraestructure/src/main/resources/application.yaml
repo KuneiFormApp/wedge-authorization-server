@@ -58,6 +58,7 @@ wedge:
       authorization-grant-types:
         - client_credentials
         - authorization_code
+        - refresh_token
       redirect-uris:
         - http://localhost:8082/callback
       scopes:
@@ -65,12 +66,13 @@ wedge:
         - profile
         - email
         - admin
+        - offline_access  # Required for refresh token issuance
       require-authorization-consent: false
-      require-pkce: false
+      require-pkce: true
       # User Provider Configuration for this client
       user-provider:
         enabled: true
-        endpoint: ${CONFIDENTIAL_BACKEND_USER_PROVIDER_ENDPOINT:http://localhost:8082/api/users/validate}
+        endpoint: ${CONFIDENTIAL_BACKEND_USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
         timeout: 5000 # milliseconds
 
   # Session Storage Configuration
@@ -91,13 +93,13 @@ wedge:
   # OAuth2 Token Configuration
   oauth2:
     tokens:
-      refresh-token-enabled: ${wedge.session.storage-type}  # Enable/disable refresh tokens
+      refresh-token-enabled: ${IS_REFRESH_TOKEN_ENABLED:true}  # Enable/disable refresh tokens
       access-token-ttl: ${ACCESS_TOKEN_TTL:1800}  # 30 minutes (in seconds)
       refresh-token-ttl: ${REFRESH_TOKEN_TTL:2592000}  # 30 days (in seconds)
 
   # OAuth2 Token Storage Configuration
   token-storage:
-    type: ${TOKEN_STORAGE_TYPE:in-memory}  # Options: in-memory, redis
+    type: ${wedge.session.storage-type}  # Options: in-memory, redis
     max-ttl: 2592000  # Max storage TTL (30 days) - used as fallback/cap
     max-size: 50000  # Max authorizations in Caffeine cache
     redis:
