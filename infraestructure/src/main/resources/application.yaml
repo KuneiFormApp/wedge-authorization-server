@@ -14,6 +14,12 @@ spring:
   threads:
     virtual:
       enabled: true
+  # Spring Session Configuration (for HTTP session replication when wedge.session.storage-type=redis)
+  session:
+    store-type: none  # Controlled by wedge.session.storage-type via @ConditionalOnProperty
+    redis:
+      namespace: ${REDIS_SESSION_NAMESPACE:wedge:http:session}
+      configure-action: none  # Use existing Redis configuration
 
 
 
