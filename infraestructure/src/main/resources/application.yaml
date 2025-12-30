@@ -1,5 +1,5 @@
 server:
-  port: 9001
+  port: ${WEDGE_AUTH_SERVER_PORT:9001}
   servlet:
     context-path: /
     session:
@@ -120,22 +120,20 @@ wedge:
     private-key-path: ${JWT_PRIVATE_KEY_PATH:} # Required when key-type=file
     public-key-path: ${JWT_PUBLIC_KEY_PATH:} # Required when key-type=file
 
-  # Supported Scopes
-  scopes:
-    - name: openid
-      description: OpenID Connect scope
-    - name: profile
-      description: User profile information
-    - name: email
-      description: User email address
-    - name: read
-      description: Read access
-    - name: write
-      description: Write access
-    - name: admin
-      description: Administrative access
-    - name: offline_access
-      description: Offline access for refresh tokens
+  # Supported Scopes (comma-separated list of scope names)
+  scopes: ${WEDGE_SCOPES:openid,profile,email,read,write,admin,offline_access}
+
+  # Frontend Configuration
+  frontend:
+    # Optional: External paths for customization (uncomment to use)
+    # templates-path: file:///path/to/custom/templates
+    # static-path: file:///path/to/custom/static
+    # i18n-basename: file:///path/to/custom/i18n/messages
+    i18n-basename: classpath:i18n/messages
+    default-locale: en
+    supported-locales:
+      - en
+      - es
 
 # Logging
 logging:

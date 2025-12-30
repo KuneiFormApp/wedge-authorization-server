@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.kuneiform.boot.WedgeAuthorizationServerStarter;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,12 +46,30 @@ class LoginControllerTest {
   }
 
   @Test
+  void shouldDisplayErrorMessageInSpanishWhenErrorParamPresent() throws Exception {
+    mockMvc
+        .perform(get("/login").param("error", "true").locale(Locale.forLanguageTag("es")))
+        .andExpect(status().isOk())
+        .andExpect(view().name("login"))
+        .andExpect(content().string(containsString("Usuario o contraseña inválidos")));
+  }
+
+  @Test
   void shouldDisplayLogoutMessageWhenLogoutParamPresent() throws Exception {
     mockMvc
         .perform(get("/login").param("logout", "true"))
         .andExpect(status().isOk())
         .andExpect(view().name("login"))
         .andExpect(content().string(containsString("You have been logged out successfully")));
+  }
+
+  @Test
+  void shouldDisplayLogoutMessageInSpanishWhenLogoutParamPresent() throws Exception {
+    mockMvc
+        .perform(get("/login").param("logout", "true").locale(Locale.forLanguageTag("es")))
+        .andExpect(status().isOk())
+        .andExpect(view().name("login"))
+        .andExpect(content().string(containsString("Has cerrado sesión exitosamente")));
   }
 
   @Test
@@ -81,6 +100,15 @@ class LoginControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("login"))
         .andExpect(content().contentType("text/html;charset=UTF-8"));
+  }
+
+  @Test
+  void shouldSupportLocaleChangeViaQueryParameter() throws Exception {
+    mockMvc
+        .perform(get("/login").param("lang", "es"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("login"))
+        .andExpect(content().string(containsString("Iniciar Sesión")));
   }
 
   @TestConfiguration

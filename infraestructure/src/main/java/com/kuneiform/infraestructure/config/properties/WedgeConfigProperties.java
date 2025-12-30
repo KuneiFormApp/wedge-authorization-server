@@ -1,5 +1,7 @@
 package com.kuneiform.infraestructure.config.properties;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -10,12 +12,14 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "wedge")
 public class WedgeConfigProperties {
 
-  private List<ClientConfig> clients = List.of();
+  private List<ClientConfig> clients = new ArrayList<>();
   private SessionConfig session = new SessionConfig();
   private OAuth2Config oauth2 = new OAuth2Config();
   private TokenStorageConfig tokenStorage = new TokenStorageConfig();
   private JwtConfig jwt = new JwtConfig();
-  private List<ScopeConfig> scopes = List.of();
+  private List<String> scopes = new ArrayList<>(Arrays.asList(
+      "openid", "profile", "email", "read", "write", "admin", "offline_access"));
+  private FrontendConfig frontend = new FrontendConfig();
 
   @Data
   public static class UserProviderConfig {
@@ -73,12 +77,6 @@ public class WedgeConfigProperties {
   }
 
   @Data
-  public static class ScopeConfig {
-    private String name;
-    private String description;
-  }
-
-  @Data
   public static class OAuth2Config {
     private TokenConfig tokens = new TokenConfig();
 
@@ -96,5 +94,28 @@ public class WedgeConfigProperties {
     private long maxTtl = 2592000; // Max 30 days
     private int maxSize = 50000;
     private RedisConfig redis = new RedisConfig();
+  }
+
+  @Data
+  public static class FrontendConfig {
+    /**
+     * Optional external templates directory path (e.g., file:///path/to/templates)
+     */
+    private String templatesPath;
+
+    /**
+     * Optional external static resources directory path (e.g.,
+     * file:///path/to/static)
+     */
+    private String staticPath;
+
+    /** i18n messages location (default: classpath:i18n/messages) */
+    private String i18nBasename = "classpath:i18n/messages";
+
+    /** Default locale (default: en) */
+    private String defaultLocale = "en";
+
+    /** Supported locales (default: en, es) */
+    private List<String> supportedLocales = new ArrayList<>(Arrays.asList("en", "es"));
   }
 }
