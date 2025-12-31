@@ -25,39 +25,40 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(
     classes = {
-      DatabaseTenantRepositoryAdapterIT.TestConfiguration.class,
+      DatabaseTenantRepositoryAdapterSqlServerIT.TestConfiguration.class,
       ClientRepositoryConfig.class,
       ClientDatabaseMigrationConfig.class,
       WedgeConfigProperties.class
     })
 @Testcontainers
 @EnableJdbcRepositories(basePackages = "com.kuneiform.infraestructure.persistence.repository")
-class DatabaseTenantRepositoryAdapterIT {
+class DatabaseTenantRepositoryAdapterSqlServerIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("wedge_test")
-          .withUsername("test")
-          .withPassword("test");
+  static MSSQLServerContainer<?> sqlserver =
+      new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:2022-latest").acceptLicense();
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", postgres::getJdbcUrl);
-    registry.add("spring.datasource.username", postgres::getUsername);
-    registry.add("spring.datasource.password", postgres::getPassword);
-    registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-    registry.add("wedge.client-storage.type", () -> "postgresql");
-    registry.add("wedge.client-storage.url", postgres::getJdbcUrl);
-    registry.add("wedge.client-storage.username", postgres::getUsername);
-    registry.add("wedge.client-storage.password", postgres::getPassword);
-    registry.add("wedge.client-storage.driver-class-name", () -> "org.postgresql.Driver");
+    registry.add("spring.datasource.url", sqlserver::getJdbcUrl);
+    registry.add("spring.datasource.username", sqlserver::getUsername);
+    registry.add("spring.datasource.password", sqlserver::getPassword);
+    registry.add(
+        "spring.datasource.driver-class-name",
+        () -> "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+    registry.add("wedge.client-storage.type", () -> "sqlserver");
+    registry.add("wedge.client-storage.url", sqlserver::getJdbcUrl);
+    registry.add("wedge.client-storage.username", sqlserver::getUsername);
+    registry.add("wedge.client-storage.password", sqlserver::getPassword);
+    registry.add(
+        "wedge.client-storage.driver-class-name",
+        () -> "com.microsoft.sqlserver.jdbc.SQLServerDriver");
   }
 
   @Configuration
@@ -79,17 +80,21 @@ class DatabaseTenantRepositoryAdapterIT {
     // Clean up existing data
     repository.deleteAll();
 
-    // Create tenants table
+    // Create tenants table manually for test setup if not present
+    // SQL Server syntax for checking table existence
     jdbcTemplate.execute(
         """
-      CREATE TABLE IF NOT EXISTS tenants (
-        id VARCHAR(255) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        user_provider_endpoint VARCHAR(500) NOT NULL,
-        user_provider_timeout INT NOT NULL DEFAULT 5000,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tenants')
+      BEGIN
+        CREATE TABLE tenants (
+          id NVARCHAR(255) PRIMARY KEY,
+          name NVARCHAR(255) NOT NULL,
+          user_provider_endpoint NVARCHAR(500) NOT NULL,
+          user_provider_timeout INT NOT NULL DEFAULT 5000,
+          created_at DATETIME2 DEFAULT GETDATE(),
+          updated_at DATETIME2 DEFAULT GETDATE()
+        )
+      END
       """);
 
     // Insert test tenants

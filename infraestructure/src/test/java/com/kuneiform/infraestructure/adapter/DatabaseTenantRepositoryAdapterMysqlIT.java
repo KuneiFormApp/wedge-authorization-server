@@ -25,39 +25,39 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(
     classes = {
-      DatabaseTenantRepositoryAdapterIT.TestConfiguration.class,
+      DatabaseTenantRepositoryAdapterMysqlIT.TestConfiguration.class,
       ClientRepositoryConfig.class,
       ClientDatabaseMigrationConfig.class,
       WedgeConfigProperties.class
     })
 @Testcontainers
 @EnableJdbcRepositories(basePackages = "com.kuneiform.infraestructure.persistence.repository")
-class DatabaseTenantRepositoryAdapterIT {
+class DatabaseTenantRepositoryAdapterMysqlIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
+  static MySQLContainer<?> mysql =
+      new MySQLContainer<>("mysql:8.0")
           .withDatabaseName("wedge_test")
           .withUsername("test")
           .withPassword("test");
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", postgres::getJdbcUrl);
-    registry.add("spring.datasource.username", postgres::getUsername);
-    registry.add("spring.datasource.password", postgres::getPassword);
-    registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-    registry.add("wedge.client-storage.type", () -> "postgresql");
-    registry.add("wedge.client-storage.url", postgres::getJdbcUrl);
-    registry.add("wedge.client-storage.username", postgres::getUsername);
-    registry.add("wedge.client-storage.password", postgres::getPassword);
-    registry.add("wedge.client-storage.driver-class-name", () -> "org.postgresql.Driver");
+    registry.add("spring.datasource.url", mysql::getJdbcUrl);
+    registry.add("spring.datasource.username", mysql::getUsername);
+    registry.add("spring.datasource.password", mysql::getPassword);
+    registry.add("spring.datasource.driver-class-name", () -> "com.mysql.cj.jdbc.Driver");
+    registry.add("wedge.client-storage.type", () -> "mysql");
+    registry.add("wedge.client-storage.url", mysql::getJdbcUrl);
+    registry.add("wedge.client-storage.username", mysql::getUsername);
+    registry.add("wedge.client-storage.password", mysql::getPassword);
+    registry.add("wedge.client-storage.driver-class-name", () -> "com.mysql.cj.jdbc.Driver");
   }
 
   @Configuration
@@ -79,7 +79,24 @@ class DatabaseTenantRepositoryAdapterIT {
     // Clean up existing data
     repository.deleteAll();
 
-    // Create tenants table
+    // MySQL table creation is handled by Flyway migration in ClientDatabaseMigrationConfig
+    // But we need to ensure the schema matches what the test expects or relies on Flyway
+    // Since we are running with SpringBootTest and dynamic properties for MySQL,
+    // ClientDatabaseMigrationConfig should pick up the mysql migration.
+    // However, DatabaseTenantRepositoryAdapterIT manually created the table.
+    // Let's rely on Flyway for MySQL as well to be safer, or replicate the manual creation if
+    // needed.
+    // The previous test manually created the table because it might run before migrations or for
+    // simplicity.
+    // But verify if we should just let Flyway do it.
+    // Given the production complexity with @DependsOn, best to use the real mechanism.
+    // But to match the previous test style, I'll add manual creation as fallback/check.
+
+    // Actually, for MySQL, let's try to let Flyway handle it as configured in the app context.
+    // But wait, the original test manually created the table. Let's do the same but with MySQL
+    // syntax.
+
+    // Create tenants table if not exists (MySQL syntax is same for simplified table)
     jdbcTemplate.execute(
         """
       CREATE TABLE IF NOT EXISTS tenants (

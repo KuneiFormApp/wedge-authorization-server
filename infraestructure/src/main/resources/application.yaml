@@ -49,7 +49,7 @@ wedge:
       name: Default Tenant
       user-provider:
         endpoint: ${USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
-        timeout: 5000 # milliseconds
+        timeout: 5000
 
   # OAuth Client Configuration
   clients:
