@@ -1,9 +1,8 @@
 # 🔐 WedgeAuth
 
 **WedgeAuth** is a **headless OAuth 2.1 / OpenID Connect authorization server**
-built on **Spring Boot 4.0.0** and **Spring Authorization Server**, designed to be:
+built on **Spring Boot 4.0.1** and **Spring Authorization Server**, designed to be:
 
-- secure by default
 - configuration-driven
 - database-optional
 - framework-agnostic at the domain level
@@ -18,7 +17,7 @@ built on **Spring Boot 4.0.0** and **Spring Authorization Server**, designed to 
 - Authorization Code flow (**PKCE required by default**)
 - OpenID Connect support
 - JWT access tokens
-- **Asymmetric key signing only (RSA / EC)**
+- **Asymmetric key signing only (RSA)**
 - JWKS endpoint
 - Token introspection
 - Token revocation
@@ -59,11 +58,7 @@ Optional (via database):
 
 ### 🖥 Login UI
 - Built-in login page (Thymeleaf)
-- Customizable templates located at:
-    - `infraestructure/src/main/resources/templates/login.html`
-    - `infraestructure/src/main/resources/static/css/`
-    - `infraestructure/src/main/resources/static/js/`
-- External login UI support (bring your own UI)
+- Customizable templates located for external login UI support (bring your own UI)
 - Headless-first design
 
 ---
@@ -71,11 +66,6 @@ Optional (via database):
 ### 🌐 Social Login *(Coming Soon)*
 > **Status**: Planned feature, not yet implemented
 
-Future support for OAuth login via external identity providers:
-- Google
-- Facebook
-- GitHub
-- Others (extensible)
 
 When implemented, this will:
 - Be fully configurable via `application.yml` or environment variables
@@ -86,7 +76,7 @@ When implemented, this will:
 ---
 
 ### ⚙️ Configuration-First
-- All features enabled/disabled via YAML
+- All features enabled/disabled via YAML or ENV variables
 - No database required by default
 - Minimal setup for a working OAuth flow
 - Progressive complexity model
@@ -97,12 +87,11 @@ When implemented, this will:
 
 These features are **disabled by default** and can be enabled by configuration.
 
-- JDBC-based persistence (PostgreSQL)
-- Persistent OAuth clients
-- Refresh tokens & rotation
-- Multiple login providers
+- OAuth clients in BD (PostgreSQL, MySQL 8.0+, SQL Server 2012+)
 - External login UI
-- Multi-tenant support (planned)
+- Distributed sessions (Redis)
+- Token revokation in distributed servers (Redis)
+- Social login (planned)
 - Consent screen (planned)
 - Audit logging (planned)
 
@@ -117,7 +106,6 @@ These features are **disabled by default** and can be enabled by configuration.
 - ❌ Implicit flow
 - ❌ Symmetric (HMAC) JWT signing
 - ❌ Admin UI (for now)
-- ❌ Dynamic Client Registration (RFC)
 
 ---
 

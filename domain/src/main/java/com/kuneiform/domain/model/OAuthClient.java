@@ -11,7 +11,8 @@ import lombok.Value;
 @Value
 @Builder
 public class OAuthClient {
-  String clientId;
+  Long id; // Optional database primary key (null for YAML-based clients)
+  String clientId; // OAuth client_id (unique business identifier)
   String clientSecret; // Null for public clients
   String clientName;
 

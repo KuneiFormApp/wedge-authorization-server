@@ -25,6 +25,24 @@ spring:
 
 # WedgeAuth Configuration
 wedge:
+  # Client Storage Configuration
+  client-storage:
+    type: ${CLIENT_STORAGE_TYPE:none} # Options: none, postgresql, mysql, sqlserver
+    # Database settings (only used when type != none)
+    url: ${CLIENT_DB_URL:jdbc:postgresql://localhost:5432/oauth2_clients}
+    username: ${CLIENT_DB_USERNAME:postgres}
+    password: ${CLIENT_DB_PASSWORD:postgres}
+    driver-class-name: ${CLIENT_DB_DRIVER:org.postgresql.Driver}
+    schema-name: ${CLIENT_DB_SCHEMA:public}
+    auto-create-schema: ${CLIENT_DB_AUTO_CREATE_SCHEMA:false}
+    # HikariCP connection pool settings
+    max-pool-size: ${CLIENT_DB_POOL_SIZE:10}
+    min-idle: ${CLIENT_DB_MIN_IDLE:5}
+    connection-timeout: ${CLIENT_DB_CONNECTION_TIMEOUT:30000}
+    idle-timeout: ${CLIENT_DB_IDLE_TIMEOUT:600000}
+    max-lifetime: ${CLIENT_DB_MAX_LIFETIME:1800000}
+    auto-commit: ${CLIENT_DB_AUTO_COMMIT:true}
+
   # OAuth Client Configuration (Static)
   clients:
     - client-id: public-spa-client

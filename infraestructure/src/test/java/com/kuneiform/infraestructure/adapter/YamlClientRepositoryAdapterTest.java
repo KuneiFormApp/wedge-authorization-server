@@ -15,11 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
-class StaticClientRepositoryAdapterTest {
+class YamlClientRepositoryAdapterTest {
 
   @Mock private PasswordEncoder passwordEncoder;
 
-  private StaticClientRepositoryAdapter adapter;
+  private YamlClientRepositoryAdapter adapter;
 
   @BeforeEach
   void setUp() {
@@ -40,7 +40,7 @@ class StaticClientRepositoryAdapterTest {
 
     config.setClients(List.of(clientConfig));
 
-    adapter = new StaticClientRepositoryAdapter(config, passwordEncoder);
+    adapter = new YamlClientRepositoryAdapter(config, passwordEncoder);
   }
 
   @Test
@@ -104,8 +104,8 @@ class StaticClientRepositoryAdapterTest {
     when(passwordEncoder.encode("secret123")).thenReturn("$encoded$secret123");
     when(passwordEncoder.matches("secret123", "$encoded$secret123")).thenReturn(true);
 
-    StaticClientRepositoryAdapter confidentialAdapter =
-        new StaticClientRepositoryAdapter(config, passwordEncoder);
+    YamlClientRepositoryAdapter confidentialAdapter =
+        new YamlClientRepositoryAdapter(config, passwordEncoder);
 
     // When
     boolean isValid = confidentialAdapter.validateClient("confidential-client", "secret123");
@@ -133,8 +133,8 @@ class StaticClientRepositoryAdapterTest {
     when(passwordEncoder.encode("secret123")).thenReturn("$encoded$secret123");
     when(passwordEncoder.matches("wrong-secret", "$encoded$secret123")).thenReturn(false);
 
-    StaticClientRepositoryAdapter confidentialAdapter =
-        new StaticClientRepositoryAdapter(config, passwordEncoder);
+    YamlClientRepositoryAdapter confidentialAdapter =
+        new YamlClientRepositoryAdapter(config, passwordEncoder);
 
     // When
     boolean isValid = confidentialAdapter.validateClient("confidential-client", "wrong-secret");
@@ -160,8 +160,8 @@ class StaticClientRepositoryAdapterTest {
     config.setClients(List.of(clientConfig));
 
     // When
-    StaticClientRepositoryAdapter minimalAdapter =
-        new StaticClientRepositoryAdapter(config, passwordEncoder);
+    YamlClientRepositoryAdapter minimalAdapter =
+        new YamlClientRepositoryAdapter(config, passwordEncoder);
     Optional<OAuthClient> client = minimalAdapter.findByClientId("minimal-client");
 
     // Then

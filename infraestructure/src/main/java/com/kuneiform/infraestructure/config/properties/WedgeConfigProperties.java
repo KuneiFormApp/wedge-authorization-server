@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class WedgeConfigProperties {
 
   private List<ClientConfig> clients = new ArrayList<>();
+  private ClientStorageConfig clientStorage = new ClientStorageConfig();
   private SessionConfig session = new SessionConfig();
   private OAuth2Config oauth2 = new OAuth2Config();
   private TokenStorageConfig tokenStorage = new TokenStorageConfig();
@@ -26,6 +27,25 @@ public class WedgeConfigProperties {
     private boolean enabled = true;
     private String endpoint;
     private int timeout = 5000;
+  }
+
+  @Data
+  public static class ClientStorageConfig {
+    private String type = "none"; // Options: none, postgresql, mysql, sqlserver
+    private String url;
+    private String username;
+    private String password;
+    private String driverClassName;
+    private String schemaName = "public"; // Default schema name
+    private boolean autoCreateSchema = false; // Auto-create schema if it doesn't exist
+
+    // HikariCP connection pool settings
+    private int maxPoolSize = 10;
+    private int minIdle = 5;
+    private long connectionTimeout = 30000; // 30 seconds in milliseconds
+    private long idleTimeout = 600000; // 10 minutes in milliseconds
+    private long maxLifetime = 1800000; // 30 minutes in milliseconds
+    private boolean autoCommit = true;
   }
 
   @Data

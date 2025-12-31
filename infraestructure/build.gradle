@@ -47,6 +47,14 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok:1.18.42'
     runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.mysql:mysql-connector-j:9.1.0' // MySQL 8.0+, override with 8.x for MySQL 5.7/5.6
+    runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11' // SQL Server 2012+, override with 7.x/8.x for 2008/2008R2
+    
+    // Flyway for database migrations
+    implementation 'org.flywaydb:flyway-core:11.1.0'
+    implementation 'org.flywaydb:flyway-database-postgresql:11.1.0'
+    implementation 'org.flywaydb:flyway-mysql:11.1.0'
+    implementation 'org.flywaydb:flyway-sqlserver:11.1.0'
 
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
 

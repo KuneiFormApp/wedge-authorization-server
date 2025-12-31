@@ -11,17 +11,15 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 
-/** Static implementation of ClientRepository that loads clients from application.yaml. */
+/** YAML-based implementation of ClientRepository that loads clients from application.yaml. */
 @Slf4j
-@Component
-public class StaticClientRepositoryAdapter implements ClientRepository {
+public class YamlClientRepositoryAdapter implements ClientRepository {
 
   private final Map<String, OAuthClient> clients = new ConcurrentHashMap<>();
   private final PasswordEncoder passwordEncoder;
 
-  public StaticClientRepositoryAdapter(
+  public YamlClientRepositoryAdapter(
       WedgeConfigProperties config, PasswordEncoder passwordEncoder) {
     this.passwordEncoder = passwordEncoder;
     loadClients(config);
