@@ -22,8 +22,7 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 
 /**
- * Web MVC configuration for custom resource locations, i18n support, and
- * Thymeleaf template
+ * Web MVC configuration for custom resource locations, i18n support, and Thymeleaf template
  * resolution.
  */
 @Slf4j
@@ -69,17 +68,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
   }
 
   /**
-   * Configure LocaleResolver to use session-based locale with Accept-Language
-   * header fallback.
-   * 
-   * <p>
-   * SessionLocaleResolver is used instead of AcceptHeaderLocaleResolver because:
+   * Configure LocaleResolver to use session-based locale with Accept-Language header fallback.
+   *
+   * <p>SessionLocaleResolver is used instead of AcceptHeaderLocaleResolver because:
+   *
    * <ul>
-   * <li>It supports LocaleChangeInterceptor for ?lang= query parameter
-   * switching</li>
-   * <li>It persists locale choice across requests in the session</li>
-   * <li>AcceptHeaderLocaleResolver is read-only and cannot be changed via
-   * interceptor</li>
+   *   <li>It supports LocaleChangeInterceptor for ?lang= query parameter switching
+   *   <li>It persists locale choice across requests in the session
+   *   <li>AcceptHeaderLocaleResolver is read-only and cannot be changed via interceptor
    * </ul>
    *
    * @return configured LocaleResolver
@@ -99,8 +95,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
   }
 
   /**
-   * Configure LocaleChangeInterceptor to allow locale switching via query
-   * parameter.
+   * Configure LocaleChangeInterceptor to allow locale switching via query parameter.
    *
    * @return configured LocaleChangeInterceptor
    */
@@ -142,10 +137,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
   }
 
-  /**
-   * Configure Thymeleaf template resolver with custom template locations if
-   * provided.
-   */
+  /** Configure Thymeleaf template resolver with custom template locations if provided. */
   @Bean
   @ConditionalOnMissingBean
   public SpringResourceTemplateResolver templateResolver() {

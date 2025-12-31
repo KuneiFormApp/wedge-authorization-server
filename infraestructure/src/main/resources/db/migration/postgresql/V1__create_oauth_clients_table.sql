@@ -1,6 +1,17 @@
--- PostgreSQL Migration Script: Create OAuth Clients Table
--- This script creates the oauth_clients table for storing OAuth 2.1 client configurations
+-- PostgreSQL Migration Script: Create Tenants and OAuth Clients Tables
+-- This script creates both the tenants table and oauth_clients table
 
+-- Create tenants table
+CREATE TABLE IF NOT EXISTS tenants (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    user_provider_endpoint VARCHAR(500) NOT NULL,
+    user_provider_timeout INTEGER NOT NULL DEFAULT 5000,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create oauth_clients table
 CREATE TABLE IF NOT EXISTS oauth_clients (
     id BIGSERIAL PRIMARY KEY,
     client_id VARCHAR(255) NOT NULL UNIQUE,
@@ -18,20 +29,19 @@ CREATE TABLE IF NOT EXISTS oauth_clients (
     require_authorization_consent BOOLEAN NOT NULL DEFAULT false,
     require_pkce BOOLEAN NOT NULL DEFAULT false,
     
-    -- User provider configuration
-    user_provider_enabled BOOLEAN NOT NULL DEFAULT true,
-    user_provider_endpoint VARCHAR(500),
-    user_provider_timeout INTEGER DEFAULT 5000,
+    -- Tenant reference for user provider
+    tenant_id VARCHAR(255) REFERENCES tenants(id),
     
     -- Audit fields
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create index on client_id for fast lookups
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_oauth_clients_client_id ON oauth_clients(client_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_clients_tenant_id ON oauth_clients(tenant_id);
 
--- Create trigger to update updated_at timestamp
+-- Create trigger to update updated_at timestamp for tenants
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -39,6 +49,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_tenants_updated_at BEFORE UPDATE ON tenants
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_oauth_clients_updated_at BEFORE UPDATE ON oauth_clients
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

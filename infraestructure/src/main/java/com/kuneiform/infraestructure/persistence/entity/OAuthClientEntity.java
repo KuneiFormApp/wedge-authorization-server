@@ -46,15 +46,9 @@ public class OAuthClientEntity {
   @Column("require_pkce")
   private Boolean requirePkce;
 
-  // User provider configuration
-  @Column("user_provider_enabled")
-  private Boolean userProviderEnabled;
-
-  @Column("user_provider_endpoint")
-  private String userProviderEndpoint;
-
-  @Column("user_provider_timeout")
-  private Integer userProviderTimeout;
+  // Tenant reference for user provider
+  @Column("tenant_id")
+  private String tenantId;
 
   // Audit fields
   @Column("created_at")
@@ -155,28 +149,12 @@ public class OAuthClientEntity {
     this.requirePkce = requirePkce;
   }
 
-  public Boolean getUserProviderEnabled() {
-    return userProviderEnabled;
+  public String getTenantId() {
+    return tenantId;
   }
 
-  public void setUserProviderEnabled(Boolean userProviderEnabled) {
-    this.userProviderEnabled = userProviderEnabled;
-  }
-
-  public String getUserProviderEndpoint() {
-    return userProviderEndpoint;
-  }
-
-  public void setUserProviderEndpoint(String userProviderEndpoint) {
-    this.userProviderEndpoint = userProviderEndpoint;
-  }
-
-  public Integer getUserProviderTimeout() {
-    return userProviderTimeout;
-  }
-
-  public void setUserProviderTimeout(Integer userProviderTimeout) {
-    this.userProviderTimeout = userProviderTimeout;
+  public void setTenantId(String tenantId) {
+    this.tenantId = tenantId;
   }
 
   public LocalDateTime getCreatedAt() {

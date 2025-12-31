@@ -1,7 +1,6 @@
 package com.kuneiform.infraestructure.adapter;
 
 import com.kuneiform.domain.model.OAuthClient;
-import com.kuneiform.domain.model.UserProviderConfig;
 import com.kuneiform.domain.port.ClientRepository;
 import com.kuneiform.infraestructure.persistence.entity.OAuthClientEntity;
 import com.kuneiform.infraestructure.persistence.repository.OAuthClientJdbcRepository;
@@ -13,8 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Database-backed implementation of ClientRepository using Spring Data JDBC. Includes an
- * in-memory cache for improved performance.
+ * Database-backed implementation of ClientRepository using Spring Data JDBC. Includes an in-memory
+ * cache for improved performance.
  */
 @Slf4j
 public class DatabaseClientRepositoryAdapter implements ClientRepository {
@@ -132,7 +131,7 @@ public class DatabaseClientRepositoryAdapter implements ClientRepository {
             entity.getRequireAuthorizationConsent() != null
                 && entity.getRequireAuthorizationConsent())
         .requirePkce(entity.getRequirePkce() != null && entity.getRequirePkce())
-        .userProviderConfig(mapUserProviderConfig(entity))
+        .tenantId(entity.getTenantId())
         .build();
   }
 
@@ -150,15 +149,7 @@ public class DatabaseClientRepositoryAdapter implements ClientRepository {
     entity.setScopes(serializeSet(client.getScopes()));
     entity.setRequireAuthorizationConsent(client.isRequireAuthorizationConsent());
     entity.setRequirePkce(client.isRequirePkce());
-
-    // User provider config
-    if (client.getUserProviderConfig() != null) {
-      entity.setUserProviderEnabled(client.getUserProviderConfig().isEnabled());
-      entity.setUserProviderEndpoint(client.getUserProviderConfig().getEndpoint());
-      entity.setUserProviderTimeout(client.getUserProviderConfig().getTimeout());
-    } else {
-      entity.setUserProviderEnabled(false);
-    }
+    entity.setTenantId(client.getTenantId());
 
     return entity;
   }
@@ -180,17 +171,5 @@ public class DatabaseClientRepositoryAdapter implements ClientRepository {
       return "";
     }
     return String.join(",", set);
-  }
-
-  /** Maps entity user provider fields to UserProviderConfig. */
-  private UserProviderConfig mapUserProviderConfig(OAuthClientEntity entity) {
-    if (entity.getUserProviderEnabled() == null || !entity.getUserProviderEnabled()) {
-      return null;
-    }
-    return UserProviderConfig.builder()
-        .enabled(true)
-        .endpoint(entity.getUserProviderEndpoint())
-        .timeout(entity.getUserProviderTimeout() != null ? entity.getUserProviderTimeout() : 5000)
-        .build();
   }
 }

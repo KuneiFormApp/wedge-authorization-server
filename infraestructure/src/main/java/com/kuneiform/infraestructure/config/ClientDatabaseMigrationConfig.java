@@ -6,11 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -24,7 +21,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class ClientDatabaseMigrationConfig {
 
   private final WedgeConfigProperties properties;
-  private final ApplicationContext applicationContext;
 
   @Bean
   public Flyway clientDatabaseFlyway(DataSource clientDataSource) {
@@ -47,21 +43,11 @@ public class ClientDatabaseMigrationConfig {
             .validateOnMigrate(true)
             .load();
 
-    log.info("Flyway configured for client database migrations");
-    return flyway;
-  }
+    log.info("Starting Flyway migration for OAuth client database");
+    flyway.migrate();
+    log.info("Flyway migration completed successfully");
 
-  @EventListener(ApplicationReadyEvent.class)
-  public void migrateDatabase() {
-    try {
-      log.info("Starting Flyway migration for OAuth client database");
-      Flyway flyway = applicationContext.getBean("clientDatabaseFlyway", Flyway.class);
-      flyway.migrate();
-      log.info("Flyway migration completed successfully");
-    } catch (Exception e) {
-      log.error("Failed to run Flyway migration for OAuth client database", e);
-      throw new RuntimeException("Database migration failed", e);
-    }
+    return flyway;
   }
 
   /**

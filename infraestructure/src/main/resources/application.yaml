@@ -43,7 +43,15 @@ wedge:
     max-lifetime: ${CLIENT_DB_MAX_LIFETIME:1800000}
     auto-commit: ${CLIENT_DB_AUTO_COMMIT:true}
 
-  # OAuth Client Configuration (Static)
+  # Tenant Configuration - each tenant has one user provider
+  tenants:
+    - id: default-tenant
+      name: Default Tenant
+      user-provider:
+        endpoint: ${USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
+        timeout: 5000 # milliseconds
+
+  # OAuth Client Configuration
   clients:
     - client-id: public-spa-client
       client-secret: # No secret for public clients
@@ -67,11 +75,7 @@ wedge:
         - offline_access  # Required for refresh token issuance
       require-authorization-consent: false
       require-pkce: true
-      # User Provider Configuration for this client
-      user-provider:
-        enabled: true
-        endpoint: ${PUBLIC_SPA_USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
-        timeout: 5000 # milliseconds
+      tenant-id: default-tenant
 
     - client-id: confidential-backend-client
       client-secret: ${CONFIDENTIAL_CLIENT_SECRET:secret}
@@ -93,11 +97,7 @@ wedge:
         - offline_access  # Required for refresh token issuance
       require-authorization-consent: false
       require-pkce: true
-      # User Provider Configuration for this client
-      user-provider:
-        enabled: true
-        endpoint: ${CONFIDENTIAL_BACKEND_USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
-        timeout: 5000 # milliseconds
+      tenant-id: default-tenant
 
   # Session Storage Configuration
   session:

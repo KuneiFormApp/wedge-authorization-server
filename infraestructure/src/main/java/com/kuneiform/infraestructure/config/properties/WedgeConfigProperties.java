@@ -12,19 +12,27 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "wedge")
 public class WedgeConfigProperties {
 
+  private List<TenantConfig> tenants = new ArrayList<>();
   private List<ClientConfig> clients = new ArrayList<>();
   private ClientStorageConfig clientStorage = new ClientStorageConfig();
   private SessionConfig session = new SessionConfig();
   private OAuth2Config oauth2 = new OAuth2Config();
   private TokenStorageConfig tokenStorage = new TokenStorageConfig();
   private JwtConfig jwt = new JwtConfig();
-  private List<String> scopes = new ArrayList<>(Arrays.asList(
-      "openid", "profile", "email", "read", "write", "admin", "offline_access"));
+  private List<String> scopes =
+      new ArrayList<>(
+          Arrays.asList("openid", "profile", "email", "read", "write", "admin", "offline_access"));
   private FrontendConfig frontend = new FrontendConfig();
 
   @Data
+  public static class TenantConfig {
+    private String id;
+    private String name;
+    private UserProviderConfig userProvider;
+  }
+
+  @Data
   public static class UserProviderConfig {
-    private boolean enabled = true;
     private String endpoint;
     private int timeout = 5000;
   }
@@ -60,7 +68,7 @@ public class WedgeConfigProperties {
     private List<String> scopes;
     private boolean requireAuthorizationConsent;
     private boolean requirePkce;
-    private UserProviderConfig userProvider = new UserProviderConfig();
+    private String tenantId;
   }
 
   @Data
@@ -118,15 +126,10 @@ public class WedgeConfigProperties {
 
   @Data
   public static class FrontendConfig {
-    /**
-     * Optional external templates directory path (e.g., file:///path/to/templates)
-     */
+    /** Optional external templates directory path (e.g., file:///path/to/templates) */
     private String templatesPath;
 
-    /**
-     * Optional external static resources directory path (e.g.,
-     * file:///path/to/static)
-     */
+    /** Optional external static resources directory path (e.g., file:///path/to/static) */
     private String staticPath;
 
     /** i18n messages location (default: classpath:i18n/messages) */

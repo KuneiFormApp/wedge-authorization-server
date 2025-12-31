@@ -1,9 +1,10 @@
 package com.kuneiform.infraestructure.adapter;
 
 import com.kuneiform.domain.model.OAuthClient;
+import com.kuneiform.domain.model.Tenant;
 import com.kuneiform.domain.model.User;
-import com.kuneiform.domain.model.UserProviderConfig;
 import com.kuneiform.domain.port.ClientRepository;
+import com.kuneiform.domain.port.TenantRepository;
 import com.kuneiform.domain.port.UserProvider;
 import java.util.Map;
 import java.util.Optional;
@@ -21,23 +22,24 @@ public class HttpUserProviderAdapter implements UserProvider {
 
   private final RestClient restClient;
   private final ClientRepository clientRepository;
+  private final TenantRepository tenantRepository;
 
   @Override
   public Optional<User> findByUsername(String clientId, String username) {
     log.debug("Finding user by username: {} for client: {}", username, clientId);
 
-    Optional<UserProviderConfig> userProviderConfig = getUserProviderConfig(clientId);
-    if (userProviderConfig.isEmpty()) {
+    Optional<com.kuneiform.domain.model.UserProvider> userProviderOpt = getUserProvider(clientId);
+    if (userProviderOpt.isEmpty()) {
       return Optional.empty();
     }
 
-    UserProviderConfig config = userProviderConfig.get();
+    com.kuneiform.domain.model.UserProvider userProvider = userProviderOpt.get();
 
     try {
       UserResponse response =
           restClient
               .get()
-              .uri(config.getEndpoint() + "/find?username={username}", username)
+              .uri(userProvider.getEndpoint() + "/find?username={username}", username)
               .retrieve()
               .onStatus(
                   status -> status.value() == HttpStatus.NOT_FOUND.value(),
@@ -60,18 +62,18 @@ public class HttpUserProviderAdapter implements UserProvider {
   public Optional<User> validateCredentials(String clientId, String username, String password) {
     log.debug("Validating credentials for user: {} for client: {}", username, clientId);
 
-    Optional<UserProviderConfig> userProviderConfig = getUserProviderConfig(clientId);
-    if (userProviderConfig.isEmpty()) {
+    Optional<com.kuneiform.domain.model.UserProvider> userProviderOpt = getUserProvider(clientId);
+    if (userProviderOpt.isEmpty()) {
       return Optional.empty();
     }
 
-    UserProviderConfig config = userProviderConfig.get();
+    com.kuneiform.domain.model.UserProvider userProvider = userProviderOpt.get();
 
     try {
       UserResponse response =
           restClient
               .post()
-              .uri(config.getEndpoint())
+              .uri(userProvider.getEndpoint())
               .body(Map.of("username", username, "password", password))
               .retrieve()
               .onStatus(
@@ -92,7 +94,8 @@ public class HttpUserProviderAdapter implements UserProvider {
     return Optional.empty();
   }
 
-  private Optional<UserProviderConfig> getUserProviderConfig(String clientId) {
+  /** Resolve user provider for a client by looking up the client's tenant. */
+  private Optional<com.kuneiform.domain.model.UserProvider> getUserProvider(String clientId) {
     Optional<OAuthClient> clientOpt = clientRepository.findByClientId(clientId);
 
     if (clientOpt.isEmpty()) {
@@ -101,14 +104,26 @@ public class HttpUserProviderAdapter implements UserProvider {
     }
 
     OAuthClient client = clientOpt.get();
-    UserProviderConfig config = client.getUserProviderConfig();
+    String tenantId = client.getTenantId();
 
-    if (config == null || !config.isEnabled()) {
-      log.warn("User provider is disabled or not configured for client: {}", clientId);
+    if (tenantId == null || tenantId.isBlank()) {
+      log.warn("Tenant not configured for client: {}", clientId);
       return Optional.empty();
     }
 
-    return Optional.of(config);
+    Optional<Tenant> tenantOpt = tenantRepository.findById(tenantId);
+    if (tenantOpt.isEmpty()) {
+      log.error("Tenant not found: {} for client: {}", tenantId, clientId);
+      return Optional.empty();
+    }
+
+    Tenant tenant = tenantOpt.get();
+    if (tenant.getUserProvider() == null) {
+      log.warn("User provider not configured for tenant: {}", tenantId);
+      return Optional.empty();
+    }
+
+    return Optional.of(tenant.getUserProvider());
   }
 
   private User mapToUser(UserResponse response) {

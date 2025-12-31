@@ -37,6 +37,7 @@ class YamlClientRepositoryAdapterTest {
     clientConfig.setScopes(List.of("openid", "profile"));
     clientConfig.setRequireAuthorizationConsent(false);
     clientConfig.setRequirePkce(true);
+    clientConfig.setTenantId("test-tenant");
 
     config.setClients(List.of(clientConfig));
 
@@ -98,6 +99,7 @@ class YamlClientRepositoryAdapterTest {
     clientConfig.setAuthorizationGrantTypes(List.of("client_credentials"));
     clientConfig.setRedirectUris(List.of("http://localhost:8080/callback"));
     clientConfig.setScopes(List.of("read", "write"));
+    clientConfig.setTenantId("test-tenant");
 
     config.setClients(List.of(clientConfig));
 
@@ -127,6 +129,7 @@ class YamlClientRepositoryAdapterTest {
     clientConfig.setAuthorizationGrantTypes(List.of("client_credentials"));
     clientConfig.setRedirectUris(List.of("http://localhost:8080/callback"));
     clientConfig.setScopes(List.of("read"));
+    clientConfig.setTenantId("test-tenant");
 
     config.setClients(List.of(clientConfig));
 
@@ -156,6 +159,7 @@ class YamlClientRepositoryAdapterTest {
     clientConfig.setRedirectUris(null);
     clientConfig.setPostLogoutRedirectUris(null);
     clientConfig.setScopes(null);
+    clientConfig.setTenantId("test-tenant");
 
     config.setClients(List.of(clientConfig));
 

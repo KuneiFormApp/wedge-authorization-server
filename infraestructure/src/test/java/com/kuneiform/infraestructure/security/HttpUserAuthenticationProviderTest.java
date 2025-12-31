@@ -34,10 +34,7 @@ class HttpUserAuthenticationProviderTest {
     // Mock client configuration
     WedgeConfigProperties.ClientConfig clientConfig = new WedgeConfigProperties.ClientConfig();
     clientConfig.setClientId(TEST_CLIENT_ID);
-    WedgeConfigProperties.UserProviderConfig userProviderConfig =
-        new WedgeConfigProperties.UserProviderConfig();
-    userProviderConfig.setEnabled(true);
-    clientConfig.setUserProvider(userProviderConfig);
+    clientConfig.setTenantId("test-tenant"); // Use tenant-based config instead
 
     lenient().when(config.getClients()).thenReturn(List.of(clientConfig));
 

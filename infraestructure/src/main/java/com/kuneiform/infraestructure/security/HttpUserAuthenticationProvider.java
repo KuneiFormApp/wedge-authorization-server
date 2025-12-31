@@ -128,29 +128,29 @@ public class HttpUserAuthenticationProvider implements AuthenticationProvider {
       log.warn("Error extracting client_id from request context: {}", e.getMessage());
     }
 
-    // Fallback: Use the first client with user-provider enabled
+    // Fallback: Use the first client with a tenant configured
     log.warn(
         "Could not determine client_id from request context, falling back to first available client");
     return config.getClients().stream()
-        .filter(client -> client.getUserProvider() != null && client.getUserProvider().isEnabled())
+        .filter(client -> client.getTenantId() != null && !client.getTenantId().isBlank())
         .map(WedgeConfigProperties.ClientConfig::getClientId)
         .findFirst()
         .orElse(null);
   }
 
   /**
-   * Validates that the given client_id exists and has a user provider configured.
+   * Validates that the given client_id exists and has a tenant configured.
    *
    * @param clientId the client ID to validate
-   * @return true if the client exists and has a user provider enabled
+   * @return true if the client exists and has a tenant configured
    */
   private boolean isClientValid(String clientId) {
     return config.getClients().stream()
         .anyMatch(
             client ->
                 client.getClientId().equals(clientId)
-                    && client.getUserProvider() != null
-                    && client.getUserProvider().isEnabled());
+                    && client.getTenantId() != null
+                    && !client.getTenantId().isBlank());
   }
 
   private Collection<? extends GrantedAuthority> extractAuthorities(User user) {

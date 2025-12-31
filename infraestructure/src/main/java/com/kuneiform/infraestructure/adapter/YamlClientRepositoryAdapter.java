@@ -1,7 +1,6 @@
 package com.kuneiform.infraestructure.adapter;
 
 import com.kuneiform.domain.model.OAuthClient;
-import com.kuneiform.domain.model.UserProviderConfig;
 import com.kuneiform.domain.port.ClientRepository;
 import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
 import java.util.HashSet;
@@ -45,12 +44,15 @@ public class YamlClientRepositoryAdapter implements ClientRepository {
                       .scopes(toSetOrEmpty(clientConfig.getScopes()))
                       .requireAuthorizationConsent(clientConfig.isRequireAuthorizationConsent())
                       .requirePkce(clientConfig.isRequirePkce())
-                      .userProviderConfig(mapUserProviderConfig(clientConfig.getUserProvider()))
+                      .tenantId(clientConfig.getTenantId())
                       .build();
 
               clients.put(client.getClientId(), client);
               log.info(
-                  "Loaded OAuth client: {} (public={})", client.getClientId(), client.isPublic());
+                  "Loaded OAuth client: {} (public={}, tenant={})",
+                  client.getClientId(),
+                  client.isPublic(),
+                  client.getTenantId());
             });
   }
 
@@ -63,18 +65,6 @@ public class YamlClientRepositoryAdapter implements ClientRepository {
       return null;
     }
     return passwordEncoder.encode(secret);
-  }
-
-  private UserProviderConfig mapUserProviderConfig(
-      WedgeConfigProperties.UserProviderConfig config) {
-    if (config == null) {
-      return null;
-    }
-    return UserProviderConfig.builder()
-        .enabled(config.isEnabled())
-        .endpoint(config.getEndpoint())
-        .timeout(config.getTimeout())
-        .build();
   }
 
   @Override
