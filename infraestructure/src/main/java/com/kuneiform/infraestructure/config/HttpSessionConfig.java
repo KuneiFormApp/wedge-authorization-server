@@ -28,7 +28,7 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
  *       {@code SessionStorage} domain port
  * </ul>
  */
-//TODO: Parametrize EnableRedisHttpSession
+// TODO: Parametrize EnableRedisHttpSession
 @Configuration
 @ConditionalOnProperty(name = "wedge.session.storage-type", havingValue = "redis")
 @EnableRedisHttpSession(redisNamespace = "${wedge.session.redis.http-namespace:wedge:http:session}")

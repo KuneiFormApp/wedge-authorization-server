@@ -1,0 +1,45 @@
+# syntax=docker/dockerfile:1
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build the native image
+# -----------------------------------------------------------------------------
+FROM ghcr.io/graalvm/native-image-community:25 AS builder
+WORKDIR /app
+
+# Copy gradle wrapper and settings
+COPY gradlew settings.gradle build.gradle ./
+COPY gradle gradle
+COPY infraestructure/build.gradle infraestructure/
+COPY domain/build.gradle domain/
+COPY application/build.gradle application/
+
+# Download dependencies
+RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+RUN ./gradlew dependencies --no-daemon || true
+
+# Copy source code
+COPY . .
+RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+
+# Build the native image
+# The AOT processing and native compilation happens here
+RUN ./gradlew :infraestructure:nativeCompile -x test --no-daemon
+
+# -----------------------------------------------------------------------------
+# Stage 2: Final Runtime Image (Distroless)
+# -----------------------------------------------------------------------------
+FROM gcr.io/distroless/base-debian12
+WORKDIR /app
+
+# Copy the native executable
+# Note: The output path depends on the Gradle Native Image plugin default
+COPY --from=builder /app/infraestructure/build/native/nativeCompile/infraestructure ./application
+
+# Application configuration
+ENV SERVER_PORT=9001
+ENV SPRING_PROFILES_ACTIVE=prod
+
+EXPOSE 9001
+
+# Run the native executable
+ENTRYPOINT ["/app/application"]

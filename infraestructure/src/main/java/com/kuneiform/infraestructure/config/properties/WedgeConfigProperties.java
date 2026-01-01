@@ -87,7 +87,8 @@ public class WedgeConfigProperties {
     private String username = "";
     private String password = "";
     private int database = 0;
-    private String namespace = "wedge:session"; // Used for wedge:auth:session by default logic if not overridden
+    private String namespace =
+        "wedge:session"; // Used for wedge:auth:session by default logic if not overridden
     private String httpNamespace = "wedge:http:session"; // Used for Spring Session
     private SslConfig ssl = new SslConfig();
 
