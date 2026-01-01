@@ -22,22 +22,12 @@ spring:
     # Exclude DataSource auto-configuration as we manually configure it based on 'wedge.client-storage.type'
     exclude:
       - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      # Exclude Session auto-configuration as we manually use @EnableRedisHttpSession conditionally
+      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
   threads:
     virtual:
       # Enable Java 21+ Virtual Threads for high-throughput concurrency
       enabled: ${SPRING_THREADS_VIRTUAL_ENABLED:true}
-  
-  # Spring Session Configuration
-  # Used for HTTP session replication when 'wedge.session.storage-type' is set to 'redis'
-  session:
-    # Storage type (redis or none). Controlled dynamically by '@ConditionalOnProperty' logic in code.
-    store-type: ${SPRING_SESSION_STORE_TYPE:none}
-    redis:
-      # Namespace for session keys in Redis
-      namespace: ${HTTP_SESSION_NAMESPACE:wedge:http:session}
-      # Configure action (default: none, assumes existing Redis infrastructure)
-      configure-action: ${SPRING_SESSION_REDIS_CONFIGURE_ACTION:none}
-
 
 # ==============================================================================
 # WedgeAuth Custom Configuration
@@ -127,9 +117,15 @@ wedge:
   # ----------------------------------------------------------------------------
   session:
     # Storage type: in-memory (default) or redis (for distributed setups)
+    # Storage type: in-memory (default) or redis (for distributed setups)
     storage-type: ${SESSION_STORAGE_TYPE:in-memory}
-    # Session TTL in seconds (default: 10 minutes)
-    ttl: ${SESSION_TTL:600}
+    
+    # Auth Session TTL (PKCE) in seconds (default: 10 minutes)
+    auth-ttl: ${AUTH_SESSION_TTL:600}
+    
+    # HTTP Session TTL (User Login) in seconds (default: 30 minutes)
+    http-ttl: ${HTTP_SESSION_TTL:1800}
+
     # Max concurrent sessions in memory (ignored if redis is used)
     max-size: ${SESSION_MAX_SIZE:10000}
     
@@ -142,6 +138,8 @@ wedge:
       database: ${REDIS_DATABASE:0}
       # Namespace for session keys in Redis (PKCE flow, not user login)
       namespace: ${AUTH_SESSION_NAMESPACE:wedge:auth:session}
+      # Namespace for Spring Session (HTTP)
+      http-namespace: ${HTTP_SESSION_NAMESPACE:wedge:http:session}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
 

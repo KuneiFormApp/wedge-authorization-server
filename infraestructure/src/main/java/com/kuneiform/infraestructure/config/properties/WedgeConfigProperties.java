@@ -74,7 +74,8 @@ public class WedgeConfigProperties {
   @Data
   public static class SessionConfig {
     private String storageType = "in-memory";
-    private int ttl = 600; // seconds
+    private int authTtl = 600; // time-to-live for PKCE Auth sessions (short-lived)
+    private int httpTtl = 1800; // time-to-live for HTTP User sessions (long-lived)
     private int maxSize = 10000; // max sessions in cache (for in-memory storage)
     private RedisConfig redis = new RedisConfig();
   }
@@ -86,7 +87,8 @@ public class WedgeConfigProperties {
     private String username = "";
     private String password = "";
     private int database = 0;
-    private String namespace = "wedge:session";
+    private String namespace = "wedge:session"; // Used for wedge:auth:session by default logic if not overridden
+    private String httpNamespace = "wedge:http:session"; // Used for Spring Session
     private SslConfig ssl = new SslConfig();
 
     @Data

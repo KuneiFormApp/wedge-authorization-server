@@ -1,7 +1,12 @@
 package com.kuneiform.infraestructure.config;
 
+import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
+import java.time.Duration;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 /**
@@ -23,12 +28,27 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
  *       {@code SessionStorage} domain port
  * </ul>
  */
+//TODO: Parametrize EnableRedisHttpSession
 @Configuration
 @ConditionalOnProperty(name = "wedge.session.storage-type", havingValue = "redis")
-@EnableRedisHttpSession(maxInactiveIntervalInSeconds = 600) // Default 10 minutes
+@EnableRedisHttpSession(redisNamespace = "${wedge.session.redis.http-namespace:wedge:http:session}")
 public class HttpSessionConfig {
+
   // Spring Session automatically configures:
   // - RedisConnectionFactory (reuses existing Redis config)
   // - Session repository
   // - Session filter
+  @Bean
+  public BeanPostProcessor redisSessionTimeoutConfigurer(WedgeConfigProperties props) {
+    return new BeanPostProcessor() {
+      @Override
+      public Object postProcessBeforeInitialization(Object bean, String beanName) {
+        if (bean instanceof RedisIndexedSessionRepository) {
+          ((RedisIndexedSessionRepository) bean)
+              .setDefaultMaxInactiveInterval(Duration.ofSeconds(props.getSession().getHttpTtl()));
+        }
+        return bean;
+      }
+    };
+  }
 }

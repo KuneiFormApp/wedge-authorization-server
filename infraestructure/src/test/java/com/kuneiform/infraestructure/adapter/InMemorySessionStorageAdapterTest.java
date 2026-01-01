@@ -21,7 +21,7 @@ class InMemorySessionStorageAdapterTest {
     // Mock WedgeConfigProperties with TTL = 600 seconds
     properties = mock(WedgeConfigProperties.class);
     WedgeConfigProperties.SessionConfig sessionConfig = new WedgeConfigProperties.SessionConfig();
-    sessionConfig.setTtl(600); // 10 minutes TTL
+    sessionConfig.setAuthTtl(600); // 10 minutes TTL
 
     when(properties.getSession()).thenReturn(sessionConfig);
 
@@ -106,7 +106,7 @@ class InMemorySessionStorageAdapterTest {
   void shouldRespectTtlFromConfiguration() throws InterruptedException {
     // Set very short TTL for testing (1 second)
     WedgeConfigProperties.SessionConfig shortTtlConfig = new WedgeConfigProperties.SessionConfig();
-    shortTtlConfig.setTtl(1); // 1 second TTL
+    shortTtlConfig.setAuthTtl(1); // 1 second TTL
 
     when(properties.getSession()).thenReturn(shortTtlConfig);
 
@@ -174,7 +174,7 @@ class InMemorySessionStorageAdapterTest {
   void shouldDeleteSessionsExpiredByTtl() throws InterruptedException {
     // Use short TTL for testing
     WedgeConfigProperties.SessionConfig shortTtlConfig = new WedgeConfigProperties.SessionConfig();
-    shortTtlConfig.setTtl(1); // 1 second TTL
+    shortTtlConfig.setAuthTtl(1); // 1 second TTL
 
     when(properties.getSession()).thenReturn(shortTtlConfig);
 

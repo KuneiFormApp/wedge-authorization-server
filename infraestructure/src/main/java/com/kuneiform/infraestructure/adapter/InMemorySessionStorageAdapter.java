@@ -35,7 +35,7 @@ public class InMemorySessionStorageAdapter implements SessionStorage {
 
   @PostConstruct
   public void init() {
-    long ttl = properties.getSession().getTtl();
+    long ttl = properties.getSession().getAuthTtl();
     int maxSize = properties.getSession().getMaxSize();
 
     if (ttl <= 0) {

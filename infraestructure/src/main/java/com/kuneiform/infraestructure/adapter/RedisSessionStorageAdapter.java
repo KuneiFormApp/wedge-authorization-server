@@ -29,7 +29,7 @@ public class RedisSessionStorageAdapter implements SessionStorage {
   @PostConstruct
   public void init() {
     String namespace = properties.getSession().getRedis().getNamespace();
-    long ttl = properties.getSession().getTtl();
+    long ttl = properties.getSession().getAuthTtl();
     log.info("Redis SessionStorage initialized: namespace={}, ttl={}s", namespace, ttl);
   }
 
@@ -39,7 +39,7 @@ public class RedisSessionStorageAdapter implements SessionStorage {
   }
 
   private Duration getTtl() {
-    return Duration.ofSeconds(properties.getSession().getTtl());
+    return Duration.ofSeconds(properties.getSession().getAuthTtl());
   }
 
   @Override

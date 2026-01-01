@@ -41,7 +41,7 @@ public class ApplicationConfig {
       SessionStorage sessionStorage,
       WedgeConfigProperties config) {
     return new CreateAuthorizationSessionUseCase(
-        clientRepository, sessionStorage, config.getSession().getTtl());
+        clientRepository, sessionStorage, config.getSession().getAuthTtl());
   }
 
   @Bean
