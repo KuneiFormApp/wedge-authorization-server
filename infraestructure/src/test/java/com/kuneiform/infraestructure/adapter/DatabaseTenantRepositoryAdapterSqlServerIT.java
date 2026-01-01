@@ -19,7 +19,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,21 +27,20 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(
-    classes = {
-      DatabaseTenantRepositoryAdapterSqlServerIT.TestConfiguration.class,
-      ClientRepositoryConfig.class,
-      ClientDatabaseMigrationConfig.class,
-      WedgeConfigProperties.class
-    })
+@SpringBootTest(classes = {
+    DatabaseTenantRepositoryAdapterSqlServerIT.TestConfiguration.class,
+    ClientRepositoryConfig.class,
+    ClientDatabaseMigrationConfig.class,
+    WedgeConfigProperties.class
+})
 @Testcontainers
-@EnableJdbcRepositories(basePackages = "com.kuneiform.infraestructure.persistence.repository")
 class DatabaseTenantRepositoryAdapterSqlServerIT {
 
   @Container
-  static MSSQLServerContainer<?> sqlserver =
-      new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:2022-latest").acceptLicense();
+  static MSSQLServerContainer<?> sqlserver = new MSSQLServerContainer<>(
+      DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest")).acceptLicense();
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -70,8 +68,10 @@ class DatabaseTenantRepositoryAdapterSqlServerIT {
     }
   }
 
-  @Autowired private TenantJdbcRepository repository;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired
+  private TenantJdbcRepository repository;
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
 
   private DatabaseTenantRepositoryAdapter adapter;
 
@@ -84,18 +84,18 @@ class DatabaseTenantRepositoryAdapterSqlServerIT {
     // SQL Server syntax for checking table existence
     jdbcTemplate.execute(
         """
-      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tenants')
-      BEGIN
-        CREATE TABLE tenants (
-          id NVARCHAR(255) PRIMARY KEY,
-          name NVARCHAR(255) NOT NULL,
-          user_provider_endpoint NVARCHAR(500) NOT NULL,
-          user_provider_timeout INT NOT NULL DEFAULT 5000,
-          created_at DATETIME2 DEFAULT GETDATE(),
-          updated_at DATETIME2 DEFAULT GETDATE()
-        )
-      END
-      """);
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'tenants')
+            BEGIN
+              CREATE TABLE tenants (
+                id NVARCHAR(255) PRIMARY KEY,
+                name NVARCHAR(255) NOT NULL,
+                user_provider_endpoint NVARCHAR(500) NOT NULL,
+                user_provider_timeout INT NOT NULL DEFAULT 5000,
+                created_at DATETIME2 DEFAULT GETDATE(),
+                updated_at DATETIME2 DEFAULT GETDATE()
+              )
+            END
+            """);
 
     // Insert test tenants
     TenantEntity tenant1 = new TenantEntity();

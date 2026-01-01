@@ -5,7 +5,7 @@ import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,14 +16,30 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @Slf4j
 @Configuration
-@ConditionalOnBean(name = "clientDataSource")
 @RequiredArgsConstructor
 public class ClientDatabaseMigrationConfig {
 
   private final WedgeConfigProperties properties;
 
   @Bean
-  public Flyway clientDatabaseFlyway(DataSource clientDataSource) {
+  @ConditionalOnProperty(name = "wedge.client-storage.type", havingValue = "postgresql")
+  public Flyway clientDatabaseFlywayPostgres(DataSource clientDataSource) {
+    return createFlywayBean(clientDataSource);
+  }
+
+  @Bean
+  @ConditionalOnProperty(name = "wedge.client-storage.type", havingValue = "mysql")
+  public Flyway clientDatabaseFlywayMysql(DataSource clientDataSource) {
+    return createFlywayBean(clientDataSource);
+  }
+
+  @Bean
+  @ConditionalOnProperty(name = "wedge.client-storage.type", havingValue = "sqlserver")
+  public Flyway clientDatabaseFlywaySqlServer(DataSource clientDataSource) {
+    return createFlywayBean(clientDataSource);
+  }
+
+  private Flyway createFlywayBean(DataSource clientDataSource) {
     String storageType = properties.getClientStorage().getType();
     String location = "classpath:db/migration/" + storageType;
 

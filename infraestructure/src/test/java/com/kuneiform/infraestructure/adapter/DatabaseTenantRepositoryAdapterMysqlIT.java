@@ -19,7 +19,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,24 +27,22 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(
-    classes = {
-      DatabaseTenantRepositoryAdapterMysqlIT.TestConfiguration.class,
-      ClientRepositoryConfig.class,
-      ClientDatabaseMigrationConfig.class,
-      WedgeConfigProperties.class
-    })
+@SpringBootTest(classes = {
+    DatabaseTenantRepositoryAdapterMysqlIT.TestConfiguration.class,
+    ClientRepositoryConfig.class,
+    ClientDatabaseMigrationConfig.class,
+    WedgeConfigProperties.class
+})
 @Testcontainers
-@EnableJdbcRepositories(basePackages = "com.kuneiform.infraestructure.persistence.repository")
 class DatabaseTenantRepositoryAdapterMysqlIT {
 
   @Container
-  static MySQLContainer<?> mysql =
-      new MySQLContainer<>("mysql:8.0")
-          .withDatabaseName("wedge_test")
-          .withUsername("test")
-          .withPassword("test");
+  static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
+      .withDatabaseName("wedge_test")
+      .withUsername("test")
+      .withPassword("test");
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -69,8 +66,10 @@ class DatabaseTenantRepositoryAdapterMysqlIT {
     }
   }
 
-  @Autowired private TenantJdbcRepository repository;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired
+  private TenantJdbcRepository repository;
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
 
   private DatabaseTenantRepositoryAdapter adapter;
 
@@ -79,35 +78,44 @@ class DatabaseTenantRepositoryAdapterMysqlIT {
     // Clean up existing data
     repository.deleteAll();
 
-    // MySQL table creation is handled by Flyway migration in ClientDatabaseMigrationConfig
-    // But we need to ensure the schema matches what the test expects or relies on Flyway
+    // MySQL table creation is handled by Flyway migration in
+    // ClientDatabaseMigrationConfig
+    // But we need to ensure the schema matches what the test expects or relies on
+    // Flyway
     // Since we are running with SpringBootTest and dynamic properties for MySQL,
     // ClientDatabaseMigrationConfig should pick up the mysql migration.
     // However, DatabaseTenantRepositoryAdapterIT manually created the table.
-    // Let's rely on Flyway for MySQL as well to be safer, or replicate the manual creation if
+    // Let's rely on Flyway for MySQL as well to be safer, or replicate the manual
+    // creation if
     // needed.
-    // The previous test manually created the table because it might run before migrations or for
+    // The previous test manually created the table because it might run before
+    // migrations or for
     // simplicity.
     // But verify if we should just let Flyway do it.
-    // Given the production complexity with @DependsOn, best to use the real mechanism.
-    // But to match the previous test style, I'll add manual creation as fallback/check.
+    // Given the production complexity with @DependsOn, best to use the real
+    // mechanism.
+    // But to match the previous test style, I'll add manual creation as
+    // fallback/check.
 
-    // Actually, for MySQL, let's try to let Flyway handle it as configured in the app context.
-    // But wait, the original test manually created the table. Let's do the same but with MySQL
+    // Actually, for MySQL, let's try to let Flyway handle it as configured in the
+    // app context.
+    // But wait, the original test manually created the table. Let's do the same but
+    // with MySQL
     // syntax.
 
-    // Create tenants table if not exists (MySQL syntax is same for simplified table)
+    // Create tenants table if not exists (MySQL syntax is same for simplified
+    // table)
     jdbcTemplate.execute(
         """
-      CREATE TABLE IF NOT EXISTS tenants (
-        id VARCHAR(255) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        user_provider_endpoint VARCHAR(500) NOT NULL,
-        user_provider_timeout INT NOT NULL DEFAULT 5000,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-      """);
+            CREATE TABLE IF NOT EXISTS tenants (
+              id VARCHAR(255) PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              user_provider_endpoint VARCHAR(500) NOT NULL,
+              user_provider_timeout INT NOT NULL DEFAULT 5000,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """);
 
     // Insert test tenants
     TenantEntity tenant1 = new TenantEntity();

@@ -14,11 +14,15 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.flywaydb.core.Flyway;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.ConfigurationCondition.ConfigurationPhase;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -87,23 +91,40 @@ public class ClientRepositoryConfig {
     return createDataSource(properties.getClientStorage());
   }
 
+  /** Custom condition that matches when any database storage type is configured. */
+  static class OnDatabaseStorageCondition extends AnyNestedCondition {
+    OnDatabaseStorageCondition() {
+      super(ConfigurationPhase.REGISTER_BEAN);
+    }
+
+    @ConditionalOnProperty(name = "wedge.client-storage.type", havingValue = "postgresql")
+    static class OnPostgreSQL {}
+
+    @ConditionalOnProperty(name = "wedge.client-storage.type", havingValue = "mysql")
+    static class OnMySQL {}
+
+    @ConditionalOnProperty(name = "wedge.client-storage.type", havingValue = "sqlserver")
+    static class OnSQLServer {}
+  }
+
   /**
    * Configuration for Spring Data JDBC repositories. Only enabled when database storage is used.
    */
   @Configuration
-  @ConditionalOnBean(name = "clientDataSource")
+  @Conditional(OnDatabaseStorageCondition.class)
   @EnableJdbcRepositories(basePackages = "com.kuneiform.infraestructure.persistence.repository")
   public static class JdbcRepositoryConfig {}
 
   /**
    * Creates database-backed client repository when a clientDataSource bean exists. Uses Spring Data
-   * JDBC for persistence.
+   * JDBC for persistence. Flyway parameter ensures migrations run before repository initialization.
    */
   @Bean
   @ConditionalOnBean(name = "clientDataSource")
-  @DependsOn("clientDatabaseFlyway")
   public ClientRepository databaseClientRepository(
-      OAuthClientJdbcRepository repository, PasswordEncoder passwordEncoder) {
+      OAuthClientJdbcRepository repository,
+      PasswordEncoder passwordEncoder,
+      @Autowired(required = false) Flyway flyway) {
     log.info(
         "Configuring database-backed client repository with storage type: {}",
         properties.getClientStorage().getType());
@@ -112,12 +133,12 @@ public class ClientRepositoryConfig {
 
   /**
    * Creates database-backed tenant repository when a clientDataSource bean exists. Uses Spring Data
-   * JDBC for persistence.
+   * JDBC for persistence. Flyway parameter ensures migrations run before repository initialization.
    */
   @Bean
   @ConditionalOnBean(name = "clientDataSource")
-  @DependsOn("clientDatabaseFlyway")
-  public TenantRepository databaseTenantRepository(TenantJdbcRepository repository) {
+  public TenantRepository databaseTenantRepository(
+      TenantJdbcRepository repository, @Autowired(required = false) Flyway flyway) {
     log.info(
         "Configuring database-backed tenant repository with storage type: {}",
         properties.getClientStorage().getType());

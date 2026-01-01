@@ -19,7 +19,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,24 +27,22 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(
-    classes = {
-      DatabaseTenantRepositoryAdapterIT.TestConfiguration.class,
-      ClientRepositoryConfig.class,
-      ClientDatabaseMigrationConfig.class,
-      WedgeConfigProperties.class
-    })
+@SpringBootTest(classes = {
+    DatabaseTenantRepositoryAdapterIT.TestConfiguration.class,
+    ClientRepositoryConfig.class,
+    ClientDatabaseMigrationConfig.class,
+    WedgeConfigProperties.class
+})
 @Testcontainers
-@EnableJdbcRepositories(basePackages = "com.kuneiform.infraestructure.persistence.repository")
 class DatabaseTenantRepositoryAdapterIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("wedge_test")
-          .withUsername("test")
-          .withPassword("test");
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
+      .withDatabaseName("test_oauth_tenants")
+      .withUsername("test")
+      .withPassword("test");
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -69,8 +66,10 @@ class DatabaseTenantRepositoryAdapterIT {
     }
   }
 
-  @Autowired private TenantJdbcRepository repository;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired
+  private TenantJdbcRepository repository;
+  @Autowired
+  private JdbcTemplate jdbcTemplate;
 
   private DatabaseTenantRepositoryAdapter adapter;
 
@@ -82,15 +81,15 @@ class DatabaseTenantRepositoryAdapterIT {
     // Create tenants table
     jdbcTemplate.execute(
         """
-      CREATE TABLE IF NOT EXISTS tenants (
-        id VARCHAR(255) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        user_provider_endpoint VARCHAR(500) NOT NULL,
-        user_provider_timeout INT NOT NULL DEFAULT 5000,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-      """);
+            CREATE TABLE IF NOT EXISTS tenants (
+              id VARCHAR(255) PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              user_provider_endpoint VARCHAR(500) NOT NULL,
+              user_provider_timeout INT NOT NULL DEFAULT 5000,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """);
 
     // Insert test tenants
     TenantEntity tenant1 = new TenantEntity();

@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build the Native Image
+# -----------------------------------------------------------------------------
+# Using GraalVM community image for Java 25
+FROM ghcr.io/graalvm/native-image-community:25 AS builder
+
+WORKDIR /app
+
+# Copy gradle wrapper and settings
+COPY gradlew settings.gradle build.gradle ./
+COPY gradle gradle
+COPY infraestructure/build.gradle infraestructure/
+COPY domain/build.gradle domain/
+COPY application/build.gradle application/
+
+# Download dependencies
+RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+RUN ./gradlew dependencies --no-daemon || true
+
+# Copy source code
+COPY . .
+RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+
+# Build the Native Image
+# We target the specific module ':infraestructure'
+RUN ./gradlew :infraestructure:nativeCompile --no-daemon
+
+# -----------------------------------------------------------------------------
+# Stage 2: Final Runtime Image
+# -----------------------------------------------------------------------------
+FROM ubuntu:noble
+
+WORKDIR /app
+
+# Create a non-root user using standard Linux tools (groupadd/useradd)
+# -r creates a system account
+# -m ensures a home directory is created (often needed for temp files)
+# -s /bin/false prevents shell login
+RUN groupadd -g 1001 -r wedge && \
+    useradd -u 1001 -r -g wedge -m -s /bin/false wedge
+
+# Copy the binary from the builder stage
+# Ensure your build.gradle sets 'imageName = "application"' or adjust path accordingly
+COPY --from=builder /app/infraestructure/build/native/nativeCompile/application ./application
+
+# Set permissions
+RUN chown wedge:wedge ./application && \
+    chmod +x ./application
+
+USER wedge
+
+# Application configuration
+ENV SERVER_PORT=9001
+EXPOSE 9001
+
+# Run the binary directly
+ENTRYPOINT ["./application"]
