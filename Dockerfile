@@ -6,14 +6,14 @@
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /app
 
-# Copy gradle wrapper and settings first for caching
+# Copy gradle wrapper and settings
 COPY gradlew settings.gradle build.gradle ./
 COPY gradle gradle
 COPY infraestructure/build.gradle infraestructure/
 COPY domain/build.gradle domain/
 COPY application/build.gradle application/
 
-# Download dependencies (fail-safe for offline work, optional but good for caching)
+# Download dependencies
 RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
 RUN ./gradlew dependencies --no-daemon || true
 
@@ -21,7 +21,7 @@ RUN ./gradlew dependencies --no-daemon || true
 COPY . .
 RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
 
-# Build the application (skip tests for speed)
+# Build the application (skip tests)
 RUN ./gradlew :infraestructure:bootJar -x test --no-daemon
 
 # Extract the layered jar
@@ -29,22 +29,22 @@ WORKDIR /app/infraestructure/build/libs
 RUN java -Djarmode=layertools -jar infraestructure-0.0.1-SNAPSHOT.jar extract
 
 # -----------------------------------------------------------------------------
-# Stage 2: Create the runtime image with CDS
+# Stage 2: Create the CDS Archive (Intermediate Stage)
 # -----------------------------------------------------------------------------
 FROM eclipse-temurin:25-jre AS runtime
 WORKDIR /app
 
-# Copy layers from builder
+# Copy layers from BUILDER to prepare for CDS generation
+# Note: copying to "./" flattens the folders, recreating the exploded jar structure at /app/
 COPY --from=builder /app/infraestructure/build/libs/dependencies/ ./
 COPY --from=builder /app/infraestructure/build/libs/spring-boot-loader/ ./
 COPY --from=builder /app/infraestructure/build/libs/snapshot-dependencies/ ./
 COPY --from=builder /app/infraestructure/build/libs/application/ ./
 
-# Perform CDS (Class Data Sharing) training
-# This starts the app, dumps the cache, and exits
+# Generate CDS archive (application.jsa)
 RUN java -XX:ArchiveClassesAtExit=application.jsa \
     -Dspring.context.exit=onRefresh \
-    -jar application.jar || true
+    org.springframework.boot.loader.launch.JarLauncher || true
 
 # -----------------------------------------------------------------------------
 # Stage 3: Final Runtime Image
@@ -52,11 +52,14 @@ RUN java -XX:ArchiveClassesAtExit=application.jsa \
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
-# Copy layers and CDS archive
-COPY --from=runtime /app/dependencies/ ./
-COPY --from=runtime /app/spring-boot-loader/ ./
-COPY --from=runtime /app/snapshot-dependencies/ ./
-COPY --from=runtime /app/application/ ./
+# 1. Copy layers from BUILDER (Source of Truth)
+# We copy from builder again to ensure we get the clean layers
+COPY --from=builder /app/infraestructure/build/libs/dependencies/ ./
+COPY --from=builder /app/infraestructure/build/libs/spring-boot-loader/ ./
+COPY --from=builder /app/infraestructure/build/libs/snapshot-dependencies/ ./
+COPY --from=builder /app/infraestructure/build/libs/application/ ./
+
+# 2. Copy ONLY the JSA file from RUNTIME
 COPY --from=runtime /app/application.jsa ./
 
 # Create a non-root user
