@@ -105,3 +105,7 @@ tasks.named('test') {
         showStandardStreams = true
     }
 }
+
+tasks.withType(org.springframework.boot.gradle.tasks.aot.ProcessTestAot) {
+    enabled = false
+}

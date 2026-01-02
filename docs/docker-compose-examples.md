@@ -229,6 +229,7 @@ services:
       
       # JWT - File-based keys
       JWT_KEY_TYPE: file
+      JWT_KEY_ID: production-key-2024
       JWT_PRIVATE_KEY_PATH: /app/keys/private-key.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public-key.pem
       
@@ -377,6 +378,7 @@ services:
       
       # JWT
       JWT_KEY_TYPE: file
+      JWT_KEY_ID: production-key-2024
       JWT_PRIVATE_KEY_PATH: /app/keys/private-key.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public-key.pem
       

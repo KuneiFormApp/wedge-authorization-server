@@ -16,7 +16,7 @@ server:
 # ==============================================================================
 spring:
   application:
-     # Name of the application used in logs and metrics
+    # Name of the application used in logs and metrics
     name: ${SPRING_APPLICATION_NAME:wedge-authorization-server}
   autoconfigure:
     # Exclude DataSource auto-configuration as we manually configure it based on 'wedge.client-storage.type'
@@ -40,18 +40,18 @@ wedge:
   client-storage:
     # Storage type: none (YAML-only), postgresql, mysql, or sqlserver
     type: ${CLIENT_STORAGE_TYPE:none}
-    
+
     # Database Connection Settings (only used when type != none)
     url: ${CLIENT_DB_URL:jdbc:postgresql://localhost:5432/oauth2_clients}
     username: ${CLIENT_DB_USERNAME:postgres}
     password: ${CLIENT_DB_PASSWORD:postgres}
     driver-class-name: ${CLIENT_DB_DRIVER:org.postgresql.Driver}
-    
+
     # Database Schema Settings
     schema-name: ${CLIENT_DB_SCHEMA:public}
     # Whether to automatically create the schema if it doesn't exist (Flyway)
     auto-create-schema: ${CLIENT_DB_AUTO_CREATE_SCHEMA:false}
-    
+
     # HikariCP Connection Pool Settings for high performance
     max-pool-size: ${CLIENT_DB_POOL_SIZE:10}
     min-idle: ${CLIENT_DB_MIN_IDLE:5}
@@ -119,16 +119,16 @@ wedge:
     # Storage type: in-memory (default) or redis (for distributed setups)
     # Storage type: in-memory (default) or redis (for distributed setups)
     storage-type: ${SESSION_STORAGE_TYPE:in-memory}
-    
+
     # Auth Session TTL (PKCE) in seconds (default: 10 minutes)
     auth-ttl: ${AUTH_SESSION_TTL:600}
-    
+
     # HTTP Session TTL (User Login) in seconds (default: 30 minutes)
     http-ttl: ${HTTP_SESSION_TTL:1800}
 
     # Max concurrent sessions in memory (ignored if redis is used)
     max-size: ${SESSION_MAX_SIZE:10000}
-    
+
     # Redis Configuration (shared by Session and Token storage if configured)
     redis:
       host: ${REDIS_HOST:127.0.0.1}

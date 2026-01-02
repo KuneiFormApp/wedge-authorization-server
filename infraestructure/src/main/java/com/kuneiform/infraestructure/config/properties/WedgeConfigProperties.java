@@ -19,9 +19,8 @@ public class WedgeConfigProperties {
   private OAuth2Config oauth2 = new OAuth2Config();
   private TokenStorageConfig tokenStorage = new TokenStorageConfig();
   private JwtConfig jwt = new JwtConfig();
-  private List<String> scopes =
-      new ArrayList<>(
-          Arrays.asList("openid", "profile", "email", "read", "write", "admin", "offline_access"));
+  private List<String> scopes = new ArrayList<>(
+      Arrays.asList("openid", "profile", "email", "read", "write", "admin", "offline_access"));
   private FrontendConfig frontend = new FrontendConfig();
 
   @Data
@@ -87,8 +86,7 @@ public class WedgeConfigProperties {
     private String username = "";
     private String password = "";
     private int database = 0;
-    private String namespace =
-        "wedge:session"; // Used for wedge:auth:session by default logic if not overridden
+    private String namespace = "wedge:session"; // Used for wedge:auth:session by default logic if not overridden
     private String httpNamespace = "wedge:http:session"; // Used for Spring Session
     private SslConfig ssl = new SslConfig();
 
@@ -105,6 +103,7 @@ public class WedgeConfigProperties {
     private int keySize = 2048;
     private String privateKeyPath;
     private String publicKeyPath;
+    private String keyId;
   }
 
   @Data
@@ -129,10 +128,15 @@ public class WedgeConfigProperties {
 
   @Data
   public static class FrontendConfig {
-    /** Optional external templates directory path (e.g., file:///path/to/templates) */
+    /**
+     * Optional external templates directory path (e.g., file:///path/to/templates)
+     */
     private String templatesPath;
 
-    /** Optional external static resources directory path (e.g., file:///path/to/static) */
+    /**
+     * Optional external static resources directory path (e.g.,
+     * file:///path/to/static)
+     */
     private String staticPath;
 
     /** i18n messages location (default: classpath:i18n/messages) */

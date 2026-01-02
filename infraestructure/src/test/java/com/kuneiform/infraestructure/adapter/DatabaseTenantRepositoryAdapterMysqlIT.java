@@ -39,7 +39,7 @@ import org.testcontainers.utility.DockerImageName;
 class DatabaseTenantRepositoryAdapterMysqlIT {
 
   @Container
-  static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
+  static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.44-oracle"))
       .withDatabaseName("wedge_test")
       .withUsername("test")
       .withPassword("test");

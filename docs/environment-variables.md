@@ -169,6 +169,7 @@ Controls JWT token signing and validation.
 | `JWT_ISSUER` | String | `http://localhost:9001` | Issuer claim (`iss`) in JWT tokens |
 | `JWT_KEY_TYPE` | Enum | `test` | Key source: `test` (generated) or `file` (from disk) |
 | `JWT_KEY_SIZE` | Integer | `2048` | RSA key size in bits (test mode only) |
+| `JWT_KEY_ID` | String | `wedge-jwt-key` | Key ID (`kid`) for JWT signing (required if key-type=file) |
 | `JWT_PRIVATE_KEY_PATH` | String | `` | Path to private key PEM file (file mode) |
 | `JWT_PUBLIC_KEY_PATH` | String | `` | Path to public key PEM file (file mode) |
 
@@ -183,6 +184,7 @@ JWT_KEY_SIZE=2048
 ```bash
 JWT_ISSUER=https://auth.example.com
 JWT_KEY_TYPE=file
+JWT_KEY_ID=production-key-2024
 JWT_PRIVATE_KEY_PATH=/app/keys/private-key.pem
 JWT_PUBLIC_KEY_PATH=/app/keys/public-key.pem
 ```
@@ -451,6 +453,7 @@ HTTP_SESSION_TTL=3600
 # JWT - File-based
 JWT_ISSUER=https://auth.example.com
 JWT_KEY_TYPE=file
+JWT_KEY_ID=production-key-2024
 JWT_PRIVATE_KEY_PATH=/app/keys/private-key.pem
 JWT_PUBLIC_KEY_PATH=/app/keys/public-key.pem
 

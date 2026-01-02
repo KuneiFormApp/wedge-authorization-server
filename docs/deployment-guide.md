@@ -318,6 +318,7 @@ services:
       
       # JWT Configuration - File-based keys
       JWT_KEY_TYPE: file
+      JWT_KEY_ID: production-key-2024
       JWT_PRIVATE_KEY_PATH: /app/keys/private-key.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public-key.pem
       
@@ -393,6 +394,7 @@ docker run -p 9001:9001 \
   -e REDIS_PORT=6379 \
   -e REDIS_PASSWORD=your-secure-redis-password \
   -e JWT_KEY_TYPE=file \
+  -e JWT_KEY_ID=production-key-2024 \
   -e JWT_PRIVATE_KEY_PATH=/app/keys/private-key.pem \
   -e JWT_PUBLIC_KEY_PATH=/app/keys/public-key.pem \
   -e JWT_ISSUER=https://auth.example.com \
@@ -494,6 +496,7 @@ services:
       
       # JWT Configuration
       JWT_KEY_TYPE: file
+      JWT_KEY_ID: production-key-2024
       JWT_PRIVATE_KEY_PATH: /app/keys/private-key.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public-key.pem
       
@@ -617,6 +620,7 @@ See [CUSTOM_LOGIN_TUTORIAL.md](./CUSTOM_LOGIN_TUTORIAL.md) for detailed instruct
 | `JWT_ISSUER` | `http://localhost:9001` | Issuer claim (iss) in tokens |
 | `JWT_KEY_TYPE` | `test` | Key source: `test` or `file` |
 | `JWT_KEY_SIZE` | `2048` | RSA key size (test mode only) |
+| `JWT_KEY_ID` | `wedge-jwt-key` | Key ID (kid) for JWT signing (required if key-type=file) |
 | `JWT_PRIVATE_KEY_PATH` | `` | Path to private key PEM file |
 | `JWT_PUBLIC_KEY_PATH` | `` | Path to public key PEM file |
 
