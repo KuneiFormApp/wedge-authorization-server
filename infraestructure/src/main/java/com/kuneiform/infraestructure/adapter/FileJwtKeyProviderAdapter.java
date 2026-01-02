@@ -63,6 +63,7 @@ public class FileJwtKeyProviderAdapter implements JwtKeyProvider {
 
       RSAPrivateKey privateKey = loadPrivateKey(privateKeyPath);
       RSAPublicKey publicKey = loadPublicKey(publicKeyPath);
+      //TODO: Read keyId from properties
       String keyId = UUID.randomUUID().toString();
 
       log.info("Successfully loaded RSA key pair with key ID: {}", keyId);
