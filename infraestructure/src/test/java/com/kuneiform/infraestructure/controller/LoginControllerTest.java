@@ -48,7 +48,7 @@ class LoginControllerTest {
   @Test
   void shouldDisplayErrorMessageInSpanishWhenErrorParamPresent() throws Exception {
     mockMvc
-        .perform(get("/login").param("error", "true").locale(Locale.forLanguageTag("es")))
+        .perform(get("/login").param("error", "true").param("lang", "es"))
         .andExpect(status().isOk())
         .andExpect(view().name("login"))
         .andExpect(content().string(containsString("Usuario o contraseña inválidos")));
@@ -66,7 +66,7 @@ class LoginControllerTest {
   @Test
   void shouldDisplayLogoutMessageInSpanishWhenLogoutParamPresent() throws Exception {
     mockMvc
-        .perform(get("/login").param("logout", "true").locale(Locale.forLanguageTag("es")))
+        .perform(get("/login").param("logout", "true").param("lang", "es"))
         .andExpect(status().isOk())
         .andExpect(view().name("login"))
         .andExpect(content().string(containsString("Has cerrado sesión exitosamente")));

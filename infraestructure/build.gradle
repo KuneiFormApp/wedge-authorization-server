@@ -109,3 +109,7 @@ tasks.named('test') {
 tasks.withType(org.springframework.boot.gradle.tasks.aot.ProcessTestAot) {
     enabled = false
 }
+
+tasks.named("bootBuildImage") {
+    imageName = "ariandel007/wedge-authorization-server:${project.version}"
+}
