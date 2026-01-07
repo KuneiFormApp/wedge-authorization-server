@@ -1,3 +1,5 @@
+<img width="967" height="239" alt="image" src="https://github.com/user-attachments/assets/04b755ec-4c1e-4ccf-af44-3595ccc03e2c" />
+
 # 🔐 WedgeAuth
 
 **WedgeAuth** is a **headless OAuth 2.1 / OpenID Connect authorization server**
