@@ -16,23 +16,17 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Adapter that loads RSA key pairs from PEM files.
  *
- * <p>
- * This implementation reads RSA keys from the file system, supporting standard
- * PEM formats:
+ * <p>This implementation reads RSA keys from the file system, supporting standard PEM formats:
  *
  * <ul>
- * <li>Private keys in PKCS#8 format
- * <li>Public keys in X.509 format
+ *   <li>Private keys in PKCS#8 format
+ *   <li>Public keys in X.509 format
  * </ul>
  *
- * <p>
- * This adapter is suitable for production environments where keys are managed
- * externally and
+ * <p>This adapter is suitable for production environments where keys are managed externally and
  * should persist across application restarts.
  *
- * <p>
- * File paths are resolved using Java's {@link Paths} API, which handles both
- * Windows and Linux
+ * <p>File paths are resolved using Java's {@link Paths} API, which handles both Windows and Linux
  * path formats correctly.
  */
 @Slf4j
@@ -46,10 +40,9 @@ public class FileJwtKeyProviderAdapter implements JwtKeyProvider {
   /**
    * Creates a new file-based key provider and loads the key pair immediately.
    *
-   * @param privateKeyPath path to the PEM-encoded private key file (PKCS#8
-   *                       format)
-   * @param publicKeyPath  path to the PEM-encoded public key file (X.509 format)
-   * @param keyId          the key identifier to use for the JWT key pair
+   * @param privateKeyPath path to the PEM-encoded private key file (PKCS#8 format)
+   * @param publicKeyPath path to the PEM-encoded public key file (X.509 format)
+   * @param keyId the key identifier to use for the JWT key pair
    * @throws IllegalStateException if key files cannot be read or parsed
    */
   public FileJwtKeyProviderAdapter(String privateKeyPath, String publicKeyPath, String keyId) {
@@ -90,10 +83,11 @@ public class FileJwtKeyProviderAdapter implements JwtKeyProvider {
     }
 
     String keyContent = Files.readString(path);
-    String privateKeyPEM = keyContent
-        .replace("-----BEGIN PRIVATE KEY-----", "")
-        .replace("-----END PRIVATE KEY-----", "")
-        .replaceAll("\\s", "");
+    String privateKeyPEM =
+        keyContent
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replaceAll("\\s", "");
 
     byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
@@ -109,10 +103,11 @@ public class FileJwtKeyProviderAdapter implements JwtKeyProvider {
     }
 
     String keyContent = Files.readString(path);
-    String publicKeyPEM = keyContent
-        .replace("-----BEGIN PUBLIC KEY-----", "")
-        .replace("-----END PUBLIC KEY-----", "")
-        .replaceAll("\\s", "");
+    String publicKeyPEM =
+        keyContent
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replaceAll("\\s", "");
 
     byte[] encoded = Base64.getDecoder().decode(publicKeyPEM);
     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);

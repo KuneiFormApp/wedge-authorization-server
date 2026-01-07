@@ -99,4 +99,54 @@ class InMemoryOAuth2AuthorizationServiceAdapterTest {
     OAuth2Authorization result = service.findById("auth-1");
     assertThat(result).isNull();
   }
+
+  @Test
+  void findByUserId() {
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(registeredClient)
+            .principalName("user-123") // This is the userId
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .id("auth-1")
+            .build();
+
+    service.save(authorization);
+
+    OAuth2Authorization result = service.findByUserId("user-123");
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo("auth-1");
+    assertThat(result.getPrincipalName()).isEqualTo("user-123");
+  }
+
+  @Test
+  void findByUserId_shouldReturnNull_whenUserIdNotFound() {
+    OAuth2Authorization result = service.findByUserId("non-existent-user");
+    assertThat(result).isNull();
+  }
+
+  @Test
+  void findByUserId_shouldReturnNull_whenUserIdIsNull() {
+    OAuth2Authorization result = service.findByUserId(null);
+    assertThat(result).isNull();
+  }
+
+  @Test
+  void remove_shouldClearUserIdIndex() {
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(registeredClient)
+            .principalName("user-456")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .id("auth-2")
+            .build();
+
+    service.save(authorization);
+
+    // Verify it's findable by userId
+    assertThat(service.findByUserId("user-456")).isNotNull();
+
+    // Remove it
+    service.remove(authorization);
+
+    // Verify it's no longer findable by userId
+    assertThat(service.findByUserId("user-456")).isNull();
+  }
 }

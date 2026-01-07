@@ -29,20 +29,22 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(classes = {
-    DatabaseTenantRepositoryAdapterIT.TestConfiguration.class,
-    ClientRepositoryConfig.class,
-    ClientDatabaseMigrationConfig.class,
-    WedgeConfigProperties.class
-})
+@SpringBootTest(
+    classes = {
+      DatabaseTenantRepositoryAdapterIT.TestConfiguration.class,
+      ClientRepositoryConfig.class,
+      ClientDatabaseMigrationConfig.class,
+      WedgeConfigProperties.class
+    })
 @Testcontainers
 class DatabaseTenantRepositoryAdapterIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
-      .withDatabaseName("test_oauth_tenants")
-      .withUsername("test")
-      .withPassword("test");
+  static PostgreSQLContainer<?> postgres =
+      new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
+          .withDatabaseName("test_oauth_tenants")
+          .withUsername("test")
+          .withPassword("test");
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -66,10 +68,8 @@ class DatabaseTenantRepositoryAdapterIT {
     }
   }
 
-  @Autowired
-  private TenantJdbcRepository repository;
-  @Autowired
-  private JdbcTemplate jdbcTemplate;
+  @Autowired private TenantJdbcRepository repository;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   private DatabaseTenantRepositoryAdapter adapter;
 

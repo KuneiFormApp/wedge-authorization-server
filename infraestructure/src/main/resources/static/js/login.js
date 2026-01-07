@@ -1,5 +1,5 @@
 // Login page interactions and validation
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const loginForm = document.getElementById('loginForm');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Password visibility toggle
     if (togglePassword && passwordInput) {
-        togglePassword.addEventListener('click', function() {
+        togglePassword.addEventListener('click', function () {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            
+
             // Update icon
             const eyeIcon = document.getElementById('eyeIcon');
             if (type === 'password') {
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form validation
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', function (e) {
             let isValid = true;
 
             // Clear previous errors
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Real-time validation feedback
-        usernameInput.addEventListener('blur', function() {
+        usernameInput.addEventListener('blur', function () {
             if (!this.value.trim()) {
                 usernameError.textContent = 'Username is required';
             } else if (this.value.trim().length < 2) {
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        passwordInput.addEventListener('blur', function() {
+        passwordInput.addEventListener('blur', function () {
             if (!this.value) {
                 passwordError.textContent = 'Password is required';
             } else if (this.value.length < 3) {
@@ -104,13 +104,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Clear errors on input
-        usernameInput.addEventListener('input', function() {
+        usernameInput.addEventListener('input', function () {
             if (usernameError.textContent && this.value.trim().length >= 2) {
                 usernameError.textContent = '';
             }
         });
 
-        passwordInput.addEventListener('input', function() {
+        passwordInput.addEventListener('input', function () {
             if (passwordError.textContent && this.value.length >= 3) {
                 passwordError.textContent = '';
             }
@@ -120,18 +120,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add smooth focus transitions
     const inputs = document.querySelectorAll('.form-input');
     inputs.forEach(input => {
-        input.addEventListener('focus', function() {
+        input.addEventListener('focus', function () {
             this.parentElement.style.transform = 'translateY(-2px)';
             this.parentElement.style.transition = 'transform 0.3s ease';
         });
 
-        input.addEventListener('blur', function() {
+        input.addEventListener('blur', function () {
             this.parentElement.style.transform = 'translateY(0)';
         });
     });
 
     // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         // Alt + U focuses username
         if (e.altKey && e.key === 'u') {
             e.preventDefault();
@@ -144,3 +144,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Language selector function
+function changeLanguage(lang) {
+    const url = new URL(window.location);
+    url.searchParams.set('lang', lang);
+    window.location.href = url.toString();
+}

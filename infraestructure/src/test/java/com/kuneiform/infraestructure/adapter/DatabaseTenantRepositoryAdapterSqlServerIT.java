@@ -29,18 +29,21 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(classes = {
-    DatabaseTenantRepositoryAdapterSqlServerIT.TestConfiguration.class,
-    ClientRepositoryConfig.class,
-    ClientDatabaseMigrationConfig.class,
-    WedgeConfigProperties.class
-})
+@SpringBootTest(
+    classes = {
+      DatabaseTenantRepositoryAdapterSqlServerIT.TestConfiguration.class,
+      ClientRepositoryConfig.class,
+      ClientDatabaseMigrationConfig.class,
+      WedgeConfigProperties.class
+    })
 @Testcontainers
 class DatabaseTenantRepositoryAdapterSqlServerIT {
 
   @Container
-  static MSSQLServerContainer<?> sqlserver = new MSSQLServerContainer<>(
-      DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest")).acceptLicense();
+  static MSSQLServerContainer<?> sqlserver =
+      new MSSQLServerContainer<>(
+              DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest"))
+          .acceptLicense();
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -68,10 +71,8 @@ class DatabaseTenantRepositoryAdapterSqlServerIT {
     }
   }
 
-  @Autowired
-  private TenantJdbcRepository repository;
-  @Autowired
-  private JdbcTemplate jdbcTemplate;
+  @Autowired private TenantJdbcRepository repository;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   private DatabaseTenantRepositoryAdapter adapter;
 

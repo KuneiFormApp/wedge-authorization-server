@@ -13,18 +13,14 @@ import org.springframework.util.StringUtils;
 /**
  * Configuration class for JWT key provider.
  *
- * <p>
- * This configuration instantiates the appropriate {@link JwtKeyProvider}
- * implementation based on
+ * <p>This configuration instantiates the appropriate {@link JwtKeyProvider} implementation based on
  * the {@code wedge.jwt.key-type} configuration property:
  *
  * <ul>
- * <li><strong>test</strong>: Uses {@link RuntimeJwtKeyProviderAdapter} to
- * generate keys at
- * runtime (suitable for development/testing)
- * <li><strong>file</strong>: Uses {@link FileJwtKeyProviderAdapter} to load
- * keys from external
- * PEM files (suitable for production)
+ *   <li><strong>test</strong>: Uses {@link RuntimeJwtKeyProviderAdapter} to generate keys at
+ *       runtime (suitable for development/testing)
+ *   <li><strong>file</strong>: Uses {@link FileJwtKeyProviderAdapter} to load keys from external
+ *       PEM files (suitable for production)
  * </ul>
  */
 @Slf4j

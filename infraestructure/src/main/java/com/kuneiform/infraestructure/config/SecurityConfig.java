@@ -79,7 +79,8 @@ public class SecurityConfig {
                                           .ClientSecretPostAuthenticationConverter(),
                                       new org.springframework.security.oauth2.server.authorization
                                           .web.authentication.PublicClientAuthenticationConverter(),
-                                      // Custom converter for Public Client Refresh Token Grant
+                                      // Custom converter for Public Client Refresh Token
+                                      // Grant
                                       request -> {
                                         String grantType =
                                             request.getParameter(OAuth2ParameterNames.GRANT_TYPE);
@@ -95,7 +96,8 @@ public class SecurityConfig {
                                             && StringUtils.hasText(clientId)
                                             && !StringUtils.hasText(clientSecret)) {
 
-                                          // Pass grant_type in parameters so the provider knows
+                                          // Pass grant_type in parameters so the
+                                          // provider knows
                                           // context
                                           Map<String, Object> params = new HashMap<>();
                                           params.put(OAuth2ParameterNames.GRANT_TYPE, grantType);
@@ -128,7 +130,11 @@ public class SecurityConfig {
   @Bean
   @Order(2)
   public SecurityFilterChain defaultSecurityFilterChain(
-      HttpSecurity http, HttpUserAuthenticationProvider authenticationProvider) throws Exception {
+      HttpSecurity http,
+      HttpUserAuthenticationProvider authenticationProvider,
+      com.kuneiform.infraestructure.security.OAuth2AuthorizationRevocationLogoutHandler
+          logoutHandler)
+      throws Exception {
     http.authorizeHttpRequests(
             authorize ->
                 authorize
@@ -141,7 +147,12 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated())
         .formLogin(form -> form.loginPage("/login").permitAll().failureUrl("/login?error=true"))
-        .logout(logout -> logout.logoutSuccessUrl("/login?logout=true").permitAll())
+        .logout(
+            logout ->
+                logout
+                    .addLogoutHandler(logoutHandler) // Revoke OAuth2 authorizations on logout
+                    .logoutSuccessUrl("/login?logout=true")
+                    .permitAll())
         .authenticationProvider(authenticationProvider);
 
     return http.build();

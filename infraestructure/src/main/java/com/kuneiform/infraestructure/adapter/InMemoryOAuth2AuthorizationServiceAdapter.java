@@ -37,6 +37,7 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
 
   private Cache<String, OAuth2Authorization> authorizationCache;
   private Cache<String, String> tokenIndexCache; // token value -> authorization ID
+  private Cache<String, String> principalIndexCache; // userId -> authorization ID
 
   @PostConstruct
   public void init() {
@@ -67,6 +68,13 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
             .maximumSize(maxSize * 4) // Up to 4 tokens per authorization
             .build();
 
+    // Principal index cache for logout support (userId -> auth ID)
+    this.principalIndexCache =
+        Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofSeconds(maxTtl))
+            .maximumSize(maxSize)
+            .build();
+
     log.info(
         "In-memory OAuth2AuthorizationService initialized: max-ttl={}s, maxSize={}",
         maxTtl,
@@ -92,6 +100,12 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
     // Create indexes for fast token lookup
     createTokenIndexes(authorization);
 
+    // Index by userId for logout support
+    // Note: getPrincipalName() returns the userId from the User object
+    if (authorization.getPrincipalName() != null) {
+      principalIndexCache.put(authorization.getPrincipalName(), id);
+    }
+
     log.debug("✅ Saved authorization: id={}, principal={}", id, authorization.getPrincipalName());
   }
 
@@ -104,6 +118,11 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
     String id = authorization.getId();
     authorizationCache.invalidate(id);
     removeTokenIndexes(authorization);
+
+    // Remove principal index
+    if (authorization.getPrincipalName() != null) {
+      principalIndexCache.invalidate(authorization.getPrincipalName());
+    }
 
     log.debug("Removed authorization: id={}", id);
   }
@@ -165,7 +184,8 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
   private void createTokenIndexes(OAuth2Authorization authorization) {
     String authId = authorization.getId();
 
-    // Index all token types using class-based keys (Spring stores tokens by class, not string keys)
+    // Index all token types using class-based keys (Spring stores tokens by class,
+    // not string keys)
     indexToken(authorization.getToken(OAuth2AccessToken.class), "access_token", authId);
     indexToken(authorization.getToken(OAuth2RefreshToken.class), "refresh_token", authId);
     indexToken(authorization.getToken("id_token"), "id_token", authId);
@@ -275,6 +295,27 @@ public class InMemoryOAuth2AuthorizationServiceAdapter implements OAuth2Authoriz
         + authorizationCache.stats()
         + ", Indexes: "
         + tokenIndexCache.stats();
+  }
+
+  /**
+   * Finds an OAuth2Authorization by userId.
+   *
+   * <p>This method is used during logout to find and revoke authorizations for a specific user.
+   *
+   * @param userId the user ID to search for
+   * @return the OAuth2Authorization if found, null otherwise
+   */
+  public OAuth2Authorization findByUserId(String userId) {
+    if (userId == null) {
+      return null;
+    }
+
+    String authId = principalIndexCache.getIfPresent(userId);
+    if (authId == null) {
+      return null;
+    }
+
+    return authorizationCache.getIfPresent(authId);
   }
 
   /**

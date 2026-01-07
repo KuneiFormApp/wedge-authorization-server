@@ -213,11 +213,13 @@ REFRESH_TOKEN_TTL=2592000  # 30 days
 TOKEN_STORAGE_MAX_SIZE=50000
 ```
 
-**Short-lived tokens (high security):**
+**Short-lived tokens (recommended for production with logout):**
 ```bash
 ACCESS_TOKEN_TTL=300       # 5 minutes
 REFRESH_TOKEN_TTL=86400    # 1 day
 ```
+
+> 💡 **Logout Recommendation:** For better security with logout, use short-lived access tokens (3-5 minutes). When users log out, refresh tokens are immediately revoked, but access tokens remain valid until expiration.
 
 **Long-lived tokens (convenience):**
 ```bash
@@ -321,6 +323,7 @@ PUBLIC_CLIENT_REQUIRE_PKCE=true
 | `CONFIDENTIAL_CLIENT_AUTH_METHODS` | `client_secret_basic,client_secret_post` | Authentication methods |
 | `CONFIDENTIAL_CLIENT_GRANT_TYPES` | `client_credentials,authorization_code,refresh_token` | Allowed grant types |
 | `CONFIDENTIAL_CLIENT_REDIRECT_URIS` | `http://localhost:8082/callback` | Redirect URIs |
+| `CONFIDENTIAL_CLIENT_POST_LOGOUT_URIS` | `http://localhost:8082/` | Post-logout URIs (comma-separated) |
 | `CONFIDENTIAL_CLIENT_SCOPES` | `openid,profile,email,admin,offline_access` | Allowed scopes |
 | `CONFIDENTIAL_CLIENT_REQUIRE_CONSENT` | `false` | Require user consent |
 | `CONFIDENTIAL_CLIENT_REQUIRE_PKCE` | `true` | Require PKCE |

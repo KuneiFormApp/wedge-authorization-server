@@ -29,20 +29,22 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(classes = {
-    DatabaseTenantRepositoryAdapterMysqlIT.TestConfiguration.class,
-    ClientRepositoryConfig.class,
-    ClientDatabaseMigrationConfig.class,
-    WedgeConfigProperties.class
-})
+@SpringBootTest(
+    classes = {
+      DatabaseTenantRepositoryAdapterMysqlIT.TestConfiguration.class,
+      ClientRepositoryConfig.class,
+      ClientDatabaseMigrationConfig.class,
+      WedgeConfigProperties.class
+    })
 @Testcontainers
 class DatabaseTenantRepositoryAdapterMysqlIT {
 
   @Container
-  static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0.44-oracle"))
-      .withDatabaseName("wedge_test")
-      .withUsername("test")
-      .withPassword("test");
+  static MySQLContainer<?> mysql =
+      new MySQLContainer<>(DockerImageName.parse("mysql:8.0.44-oracle"))
+          .withDatabaseName("wedge_test")
+          .withUsername("test")
+          .withPassword("test");
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -66,10 +68,8 @@ class DatabaseTenantRepositoryAdapterMysqlIT {
     }
   }
 
-  @Autowired
-  private TenantJdbcRepository repository;
-  @Autowired
-  private JdbcTemplate jdbcTemplate;
+  @Autowired private TenantJdbcRepository repository;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   private DatabaseTenantRepositoryAdapter adapter;
 

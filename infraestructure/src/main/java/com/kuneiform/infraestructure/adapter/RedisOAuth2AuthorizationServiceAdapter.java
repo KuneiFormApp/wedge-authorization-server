@@ -44,6 +44,7 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
   // L1 Caches (In-Memory)
   private Cache<String, OAuth2Authorization> localAuthCache;
   private Cache<String, String> localIndexCache;
+  private Cache<String, String> principalIndexCache; // userId -> auth ID
 
   // L2 Templates (Redis)
   private RedisTemplate<String, OAuth2Authorization> redisAuthTemplate;
@@ -64,7 +65,8 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
     // Initialize L1 Caffeine Caches
     // We set a short TTL for L1 to ensure we eventually fetch fresh data from Redis
     // effectively mitigating consistency issues in a distributed setup.
-    // 5 minutes or 1/10th of maxTtl, whichever is smaller, is a reasonable default for L1.
+    // 5 minutes or 1/10th of maxTtl, whichever is smaller, is a reasonable default
+    // for L1.
     long localTtl = Math.min(300, maxTtl > 0 ? maxTtl : 300);
 
     this.localAuthCache =
@@ -80,11 +82,19 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
             .maximumSize(maxSize * 4L)
             .build();
 
+    // Principal index cache for logout support (userId -> auth ID)
+    this.principalIndexCache =
+        Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofSeconds(localTtl))
+            .maximumSize(maxSize)
+            .build();
+
     // Initialize L2 Redis Templates
     this.redisAuthTemplate = new RedisTemplate<>();
     this.redisAuthTemplate.setConnectionFactory(redisConnectionFactory);
     this.redisAuthTemplate.setKeySerializer(new StringRedisSerializer());
-    // Use JDK Serialization for OAuth2Authorization to handle exact object state safely
+    // Use JDK Serialization for OAuth2Authorization to handle exact object state
+    // safely
     this.redisAuthTemplate.setValueSerializer(new JdkSerializationRedisSerializer());
     this.redisAuthTemplate.afterPropertiesSet();
 
@@ -126,6 +136,14 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
     // 4. Update Indexes (L1 + L2)
     updateIndexes(authorization, ttl);
 
+    // New: Index by userId for logout support
+    // Note: getPrincipalName() returns the userId from the User object
+    if (authorization.getPrincipalName() != null) {
+      String principalKey = buildPrincipalIndexKey(authorization.getPrincipalName());
+      redisIndexTemplate.opsForValue().set(principalKey, id, ttl);
+      principalIndexCache.put(authorization.getPrincipalName(), id);
+    }
+
     log.debug("💾 Saved authorization (Hybrid): id={}", id);
   }
 
@@ -144,6 +162,13 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
 
     // 3. Remove Indexes
     removeIndexes(authorization);
+
+    // New: Remove principal index
+    if (authorization.getPrincipalName() != null) {
+      String principalKey = buildPrincipalIndexKey(authorization.getPrincipalName());
+      redisIndexTemplate.delete(principalKey);
+      principalIndexCache.invalidate(authorization.getPrincipalName());
+    }
 
     log.debug("Removed authorization (Hybrid): id={}", id);
   }
@@ -306,5 +331,44 @@ public class RedisOAuth2AuthorizationServiceAdapter implements OAuth2Authorizati
 
   private String buildTokenIndexKeySuffix(String typeValue, String value) {
     return typeValue + ":" + value;
+  }
+
+  /**
+   * Finds an OAuth2Authorization by userId.
+   *
+   * <p>This method is used during logout to find and revoke authorizations for a specific user.
+   *
+   * @param userId the user ID to search for
+   * @return the OAuth2Authorization if found, null otherwise
+   */
+  public OAuth2Authorization findByUserId(String userId) {
+    if (userId == null) {
+      return null;
+    }
+
+    // Check L1 cache first
+    String authId = principalIndexCache.getIfPresent(userId);
+
+    // If not in L1, check Redis
+    if (authId == null) {
+      String principalKey = buildPrincipalIndexKey(userId);
+      authId = redisIndexTemplate.opsForValue().get(principalKey);
+
+      if (authId != null) {
+        // Populate L1 cache
+        principalIndexCache.put(userId, authId);
+      }
+    }
+
+    if (authId == null) {
+      return null;
+    }
+
+    // Find the authorization by ID
+    return findById(authId);
+  }
+
+  private String buildPrincipalIndexKey(String userId) {
+    return buildIndexKey("principal:" + userId);
   }
 }

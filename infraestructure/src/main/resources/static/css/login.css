@@ -77,12 +77,16 @@ body {
 }
 
 @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translate(0, 0) scale(1);
     }
+
     33% {
         transform: translate(30px, -30px) scale(1.1);
     }
+
     66% {
         transform: translate(-20px, 20px) scale(0.9);
     }
@@ -115,6 +119,7 @@ body {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -154,6 +159,53 @@ body {
     font-weight: 400;
 }
 
+/* Language Selector */
+.language-selector {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.language-select {
+    padding: 0.5rem 2.5rem 0.5rem 1rem;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+}
+
+.language-select:hover {
+    border-color: #667eea;
+    background-color: rgba(30, 41, 59, 0.7);
+}
+
+.language-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+
 .alert {
     display: flex;
     align-items: center;
@@ -170,6 +222,7 @@ body {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -252,8 +305,8 @@ body {
     background: rgba(30, 41, 59, 0.7);
 }
 
-.form-input:focus + .toggle-password,
-.form-input:focus ~ .input-icon {
+.form-input:focus+.toggle-password,
+.form-input:focus~.input-icon {
     color: #667eea;
 }
 
@@ -323,12 +376,12 @@ body {
     transition: all 0.3s ease;
 }
 
-.remember-me input[type="checkbox"]:checked ~ .checkbox-custom {
+.remember-me input[type="checkbox"]:checked~.checkbox-custom {
     background: var(--primary-gradient);
     border-color: transparent;
 }
 
-.remember-me input[type="checkbox"]:checked ~ .checkbox-custom::after {
+.remember-me input[type="checkbox"]:checked~.checkbox-custom::after {
     content: '';
     position: absolute;
     left: 5px;
@@ -416,7 +469,9 @@ body {
         font-size: 1.75rem;
     }
 
-    .orb-1, .orb-2, .orb-3 {
+    .orb-1,
+    .orb-2,
+    .orb-3 {
         width: 300px;
         height: 300px;
     }

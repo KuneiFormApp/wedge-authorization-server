@@ -29,34 +29,33 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Integration test for DatabaseClientRepositoryAdapter using Testcontainers
- * with PostgreSQL. Tests
- * the full stack: database, Flyway migrations, Spring Data JDBC, and the
- * repository adapter.
+ * Integration test for DatabaseClientRepositoryAdapter using Testcontainers with PostgreSQL. Tests
+ * the full stack: database, Flyway migrations, Spring Data JDBC, and the repository adapter.
  */
-@SpringBootTest(classes = {
-    DatabaseClientRepositoryAdapterIT.TestConfiguration.class,
-    ClientRepositoryConfig.class,
-    ClientDatabaseMigrationConfig.class,
-    WedgeConfigProperties.class
-})
+@SpringBootTest(
+    classes = {
+      DatabaseClientRepositoryAdapterIT.TestConfiguration.class,
+      ClientRepositoryConfig.class,
+      ClientDatabaseMigrationConfig.class,
+      WedgeConfigProperties.class
+    })
 @Testcontainers
 class DatabaseClientRepositoryAdapterIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
-      .withDatabaseName("test_oauth_clients")
-      .withUsername("test")
-      .withPassword("test");
+  static PostgreSQLContainer<?> postgres =
+      new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
+          .withDatabaseName("test_oauth_clients")
+          .withUsername("test")
+          .withPassword("test");
+
+  @Autowired private DatabaseClientRepositoryAdapter adapter;
+
+  @Autowired private OAuthClientJdbcRepository jdbcRepository;
 
   @Autowired
-  private DatabaseClientRepositoryAdapter adapter;
-
-  @Autowired
-  private OAuthClientJdbcRepository jdbcRepository;
-
-  @Autowired
-  private com.kuneiform.infraestructure.persistence.repository.TenantJdbcRepository tenantRepository;
+  private com.kuneiform.infraestructure.persistence.repository.TenantJdbcRepository
+      tenantRepository;
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
@@ -100,19 +99,20 @@ class DatabaseClientRepositoryAdapterIT {
   @Test
   void shouldSaveAndRetrievePublicClient() {
     // Given
-    OAuthClient client = OAuthClient.builder()
-        .clientId("test-public-client")
-        .clientName("Test Public Client")
-        .clientSecret(null) // Public client
-        .clientAuthenticationMethods(Set.of("none"))
-        .authorizationGrantTypes(Set.of("authorization_code", "refresh_token"))
-        .redirectUris(Set.of("http://localhost:3000/callback"))
-        .postLogoutRedirectUris(Set.of("http://localhost:3000/"))
-        .scopes(Set.of("openid", "profile", "email"))
-        .requireAuthorizationConsent(false)
-        .requirePkce(true)
-        .tenantId("test-tenant")
-        .build();
+    OAuthClient client =
+        OAuthClient.builder()
+            .clientId("test-public-client")
+            .clientName("Test Public Client")
+            .clientSecret(null) // Public client
+            .clientAuthenticationMethods(Set.of("none"))
+            .authorizationGrantTypes(Set.of("authorization_code", "refresh_token"))
+            .redirectUris(Set.of("http://localhost:3000/callback"))
+            .postLogoutRedirectUris(Set.of("http://localhost:3000/"))
+            .scopes(Set.of("openid", "profile", "email"))
+            .requireAuthorizationConsent(false)
+            .requirePkce(true)
+            .tenantId("test-tenant")
+            .build();
 
     // When
     OAuthClient saved = adapter.save(client);
@@ -132,17 +132,18 @@ class DatabaseClientRepositoryAdapterIT {
   @Test
   void shouldSaveAndRetrieveConfidentialClient() {
     // Given
-    OAuthClient client = OAuthClient.builder()
-        .clientId("test-confidential-client")
-        .clientName("Test Confidential Client")
-        .clientSecret("my-secret") // Will be encoded
-        .clientAuthenticationMethods(Set.of("client_secret_basic", "client_secret_post"))
-        .authorizationGrantTypes(Set.of("client_credentials"))
-        .redirectUris(Set.of("http://localhost:8082/callback"))
-        .scopes(Set.of("read", "write", "admin"))
-        .requireAuthorizationConsent(false)
-        .requirePkce(true)
-        .build();
+    OAuthClient client =
+        OAuthClient.builder()
+            .clientId("test-confidential-client")
+            .clientName("Test Confidential Client")
+            .clientSecret("my-secret") // Will be encoded
+            .clientAuthenticationMethods(Set.of("client_secret_basic", "client_secret_post"))
+            .authorizationGrantTypes(Set.of("client_credentials"))
+            .redirectUris(Set.of("http://localhost:8082/callback"))
+            .scopes(Set.of("read", "write", "admin"))
+            .requireAuthorizationConsent(false)
+            .requirePkce(true)
+            .build();
 
     // When
     OAuthClient saved = adapter.save(client);
@@ -191,19 +192,20 @@ class DatabaseClientRepositoryAdapterIT {
   @Test
   void shouldHandleNullCollections() {
     // Given
-    OAuthClient client = OAuthClient.builder()
-        .clientId("minimal-client")
-        .clientName("Minimal Client")
-        .clientSecret(null)
-        .clientAuthenticationMethods(new HashSet<>())
-        .authorizationGrantTypes(new HashSet<>())
-        .redirectUris(new HashSet<>())
-        .postLogoutRedirectUris(new HashSet<>())
-        .scopes(new HashSet<>())
-        .requireAuthorizationConsent(false)
-        .requirePkce(false)
-        .tenantId("test-tenant")
-        .build();
+    OAuthClient client =
+        OAuthClient.builder()
+            .clientId("minimal-client")
+            .clientName("Minimal Client")
+            .clientSecret(null)
+            .clientAuthenticationMethods(new HashSet<>())
+            .authorizationGrantTypes(new HashSet<>())
+            .redirectUris(new HashSet<>())
+            .postLogoutRedirectUris(new HashSet<>())
+            .scopes(new HashSet<>())
+            .requireAuthorizationConsent(false)
+            .requirePkce(false)
+            .tenantId("test-tenant")
+            .build();
 
     // When
     OAuthClient saved = adapter.save(client);
