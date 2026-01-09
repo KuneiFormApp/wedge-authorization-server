@@ -4,6 +4,7 @@ import com.kuneiform.application.usecase.AuthenticateUserUseCase;
 import com.kuneiform.domain.model.User;
 import com.kuneiform.infraestructure.config.properties.WedgeConfigProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -77,80 +79,38 @@ public class HttpUserAuthenticationProvider implements AuthenticationProvider {
    * order:
    *
    * <ol>
-   *   <li>Request parameter "client_id"
+   *   <li>Request parameter "client_id" (direct from current request)
    *   <li>Session attribute "SPRING_SECURITY_SAVED_REQUEST" (contains original authorization
    *       request)
-   *   <li>Falls back to the first client with user-provider enabled (with warning)
    * </ol>
    *
-   * @return the determined client_id, or null if no valid client is found
+   * @return the determined client_id
+   * @throws BadCredentialsException if client_id cannot be determined from request context
    */
   private String determineClientId() {
     try {
-      ServletRequestAttributes attributes =
-          (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+      HttpServletRequest request = getCurrentRequest();
 
-      if (attributes != null) {
-        HttpServletRequest request = attributes.getRequest();
-
-        String clientId = "";
-
-        // Try to extract from saved request in session (after redirect from /oauth2/authorize)
-        Object savedRequest =
-            request.getSession(false) != null
-                ? request.getSession().getAttribute("SPRING_SECURITY_SAVED_REQUEST")
-                : null;
-
-        if (savedRequest != null) {
-          // The saved request typically contains the original URL with client_id
-          String savedRequestStr = savedRequest.toString();
-          log.trace("Checking saved request: {}", savedRequestStr);
-
-          // Extract client_id from saved request URL if present
-          if (savedRequestStr.contains("client_id=")) {
-            int startIdx = savedRequestStr.indexOf("client_id=") + 10;
-            int endIdx = savedRequestStr.indexOf("&", startIdx);
-            if (endIdx == -1) {
-              endIdx = savedRequestStr.indexOf(" ", startIdx);
-            }
-            if (endIdx == -1) {
-              endIdx = savedRequestStr.length();
-            }
-            clientId = savedRequestStr.substring(startIdx, endIdx);
-            log.debug("Extracted client_id from saved request: {}", clientId);
-            if (isClientValid(clientId)) {
-              return clientId;
-            }
-          }
-        }
+      // 1. From request parameter
+      String clientId = fromRequestParameter(request);
+      if (clientId != null) {
+        return clientId;
       }
+
+      // 2. From saved request (OAuth redirect)
+      clientId = fromSavedRequest(request);
+      if (clientId != null) {
+        return clientId;
+      }
+
+      throw new BadCredentialsException("client_id is required but was not found in the request");
+
+    } catch (BadCredentialsException e) {
+      throw e;
     } catch (Exception e) {
-      log.warn("Error extracting client_id from request context: {}", e.getMessage());
+      log.error("Error determining client_id", e);
+      throw new BadCredentialsException("Failed to determine client_id from request context", e);
     }
-
-    // Fallback: Use the first client with a tenant configured
-    log.warn(
-        "Could not determine client_id from request context, falling back to first available client");
-    return config.getClients().stream()
-        .filter(client -> client.getTenantId() != null && !client.getTenantId().isBlank())
-        .map(WedgeConfigProperties.ClientConfig::getClientId)
-        .findFirst()
-        .orElse(null);
-  }
-
-  /**
-   * Validates that the given client_id exists and has a tenant configured.
-   *
-   * @param clientId the client ID to validate
-   * @return true if the client exists and has a tenant configured
-   */
-  private boolean isClientValid(String clientId) {
-    return config.getClients().stream()
-        .anyMatch(
-            client ->
-                client.getClientId().equals(clientId)
-                    && client.getTenantId() != null
-                    && !client.getTenantId().isBlank());
   }
 
   private Collection<? extends GrantedAuthority> extractAuthorities(User user) {
@@ -172,5 +132,76 @@ public class HttpUserAuthenticationProvider implements AuthenticationProvider {
     }
 
     return authorities;
+  }
+
+  private HttpServletRequest getCurrentRequest() {
+    ServletRequestAttributes attributes =
+        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+    if (attributes == null) {
+      throw new BadCredentialsException("No request context available");
+    }
+
+    return attributes.getRequest();
+  }
+
+  private String fromRequestParameter(HttpServletRequest request) {
+    String clientId = request.getParameter("client_id");
+
+    if (StringUtils.hasText(clientId)) {
+      log.debug("Found client_id in request parameter: {}", clientId);
+      return clientId;
+    }
+
+    return null;
+  }
+
+  private String fromSavedRequest(HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return null;
+    }
+
+    Object saved = session.getAttribute("SPRING_SECURITY_SAVED_REQUEST");
+    if (saved == null) {
+      return null;
+    }
+
+    // Preferred: Spring Security SavedRequest
+    if (saved instanceof org.springframework.security.web.savedrequest.SavedRequest sr) {
+      String[] values = sr.getParameterValues("client_id");
+      if (values != null && values.length > 0 && StringUtils.hasText(values[0])) {
+        log.debug("Extracted client_id from SavedRequest: {}", values[0]);
+        return values[0];
+      }
+      return null;
+    }
+
+    // Fallback (legacy / defensive)
+    return extractClientIdFromString(saved.toString());
+  }
+
+  private String extractClientIdFromString(String value) {
+    int idx = value.indexOf("client_id=");
+    if (idx == -1) {
+      return null;
+    }
+
+    int start = idx + "client_id=".length();
+    int end = value.indexOf("&", start);
+    if (end == -1) {
+      end = value.indexOf(" ", start);
+    }
+    if (end == -1) {
+      end = value.length();
+    }
+
+    String clientId = value.substring(start, end);
+    if (StringUtils.hasText(clientId)) {
+      log.debug("Extracted client_id from saved request string: {}", clientId);
+      return clientId;
+    }
+
+    return null;
   }
 }

@@ -3,7 +3,7 @@ plugins {
     id 'org.springframework.boot' version "${springBootVersion}"
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
-    id 'org.graalvm.buildtools.native' version '0.11.3'
+//    id 'org.graalvm.buildtools.native' version '0.11.3'
 }
 
 group = 'com.kuneiform'
@@ -15,20 +15,20 @@ configurations {
     }
 }
 
-graalvmNative {
-    binaries {
-        main {
-            // Explicitly set the name of the final binary so your Dockerfile COPY instruction always finds it
-            imageName = 'application'
-
-            // Helpful options for debugging build failures
-            buildArgs.add('--verbose')
-
-            // If you run into memory issues during the build (common in CI)
-            buildArgs.add('-J-Xmx6g')
-        }
-    }
-}
+//graalvmNative {
+//    binaries {
+//        main {
+//            // Explicitly set the name of the final binary so your Dockerfile COPY instruction always finds it
+//            imageName = 'application'
+//
+//            // Helpful options for debugging build failures
+//            buildArgs.add('--verbose')
+//
+//            // If you run into memory issues during the build (common in CI)
+//            buildArgs.add('-J-Xmx6g')
+//        }
+//    }
+//}
 
 repositories {
     mavenCentral()
