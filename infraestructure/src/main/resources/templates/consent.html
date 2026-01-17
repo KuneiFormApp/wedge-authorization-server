@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{consent.title}">Authorization Request</title>
+    <link rel="stylesheet" th:href="@{/css/consent.css}">
+</head>
+
+<body>
+    <div class="consent-container">
+        <!-- App Info Header -->
+        <div class="app-header">
+            <!-- App Logo -->
+            <img th:if="${clientLogo != null}" th:src="${clientLogo}" th:alt="${clientName}" class="app-logo">
+            <div th:if="${clientLogo == null}" class="app-logo-placeholder"
+                th:text="${#strings.substring(clientName, 0, 1).toUpperCase()}">A</div>
+
+            <div class="app-info">
+                <h1 class="app-name" th:text="${clientName}">Application Name</h1>
+                <p class="consent-message" th:text="#{consent.message(${principalName})}">
+                    wants to access your account
+                </p>
+            </div>
+        </div>
+
+        <!-- Consent Form -->
+        <form name="consent" method="post" action="/oauth2/authorize">
+            <input type="hidden" name="client_id" th:value="${clientId}">
+            <input type="hidden" name="state" th:value="${state}">
+
+            <!-- New Scopes  Section -->
+            <div th:if="${!#lists.isEmpty(scopes)}" class="section">
+                <h2 class="section-title" th:text="#{consent.scopes.title}">This app would like to:</h2>
+
+                <ul class="scope-list">
+                    <li th:each="scope : ${scopes}" class="scope-item">
+                        <!-- Hidden checkbox for form submission -->
+                        <input type="checkbox" th:id="'scope-' + ${scope}" name="scope" th:value="${scope}" checked
+                            class="scope-checkbox">
+
+                        <!-- Scope Icon -->
+                        <svg class="scope-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <!-- Profile scope icon -->
+                            <circle th:if="${scope == 'profile' or scope == 'openid'}" cx="12" cy="8" r="4"></circle>
+                            <path th:if="${scope == 'profile' or scope == 'openid'}"
+                                d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+
+                            <!-- Email scope icon -->
+                            <path th:if="${scope == 'email'}"
+                                d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                            </path>
+                            <polyline th:if="${scope == 'email'}" points="22,6 12,13 2,6"></polyline>
+
+                            <!-- offline_access scope icon -->
+                            <path th:if="${scope == 'offline_access'}"
+                                d="M12 2v6m0 6v6m6-15.84l-4 4m0 8l4 4M6 6.84L10 10.84m0 0L6 14.84M12 12a2 2 0 1 1 0-4 2 2 0 0 1 0 4z">
+                            </path>
+
+                            <!-- Read scope icon -->
+                            <path th:if="${#strings.contains(scope, 'read')}"
+                                d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle th:if="${#strings.contains(scope, 'read')}" cx="12" cy="12" r="3"></circle>
+
+                            <!-- Write scope icon -->
+                            <path th:if="${#strings.contains(scope, 'write')}"
+                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path th:if="${#strings.contains(scope, 'write')}"
+                                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+
+                            <!-- Default icon -->
+                            <circle
+                                th:unless="${scope == 'profile' or scope == 'openid' or scope == 'email' or scope == 'offline_access' or #strings.contains(scope, 'read') or #strings.contains(scope, 'write')}"
+                                cx="12" cy="12" r="10"></circle>
+                            <path
+                                th:unless="${scope == 'profile' or scope == 'openid' or scope == 'email' or scope == 'offline_access' or #strings.contains(scope, 'read') or #strings.contains(scope, 'write')}"
+                                d="M9 11l3 3 8-8"></path>
+                        </svg>
+
+                        <!-- Scope Details -->
+                        <label th:for="'scope-' + ${scope}" class="scope-label">
+                            <div class="scope-name" th:text="#{${'scope.' + scope + '.name'}}">[[${scope}]]</div>
+                            <div class="scope-desc" th:text="#{${'scope.' + scope + '.desc'}}"></div>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Previously Approved Scopes (read-only) -->
+            <div th:if="${!#lists.isEmpty(previouslyApprovedScopes)}" class="section previously-approved">
+                <h3 class="section-subtitle" th:text="#{consent.scopes.previouslyApproved}">Previously approved:
+                </h3>
+                <ul class="scope-list-compact">
+                    <li th:each="scope : ${previouslyApprovedScopes}" class="scope-badge">
+                        <input type="hidden" name="scope" th:value="${scope}">
+                        <span th:text="#{${'scope.' + scope + '.name'}}">[[${scope}]]</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <button type="submit" name="consent_action" value="approve" class="btn btn-approve"
+                    th:text="#{consent.approve}">
+                    Allow
+                </button>
+                <button type="submit" name="consent_action" value="deny" class="btn btn-deny" th:text="#{consent.deny}">
+                    Deny
+                </button>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="security-notice">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <p th:text="#{consent.securityNotice}">
+                    Only share access with apps you trust. You can revoke access anytime from your account settings.
+                </p>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

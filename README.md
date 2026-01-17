@@ -1,175 +1,215 @@
+<img width="967" height="239" alt="image" src="https://github.com/user-attachments/assets/04b755ec-4c1e-4ccf-af44-3595ccc03e2c" />
+
 # 🔐 WedgeAuth
 
-**WedgeAuth** is a **headless OAuth 2.1 / OpenID Connect authorization server**
-built on **Spring Boot 4.0.0** and **Spring Authorization Server**, designed to be:
+**WedgeAuth** is a **headless OAuth 2.1 / OpenID Connect authorization server** built on **Spring Boot 4.0.1** and **Spring Authorization Server**.
 
-- secure by default
-- configuration-driven
-- database-optional
-- framework-agnostic at the domain level
-
-> **WedgeAuth is an authorization server, not an identity system.**
+> **WedgeAuth is an authorization server, not an identity system.**  
+> **You own your users. You own your data. No vendor lock-in.**
 
 ---
 
-## ✨ Features
+## 🎯 What is WedgeAuth?
 
-### 🔑 OAuth 2.1 / OpenID Connect
-- Authorization Code flow (**PKCE required by default**)
-- OpenID Connect support
-- JWT access tokens
-- **Asymmetric key signing only (RSA / EC)**
-- JWKS endpoint
-- Token introspection
-- Token revocation
+WedgeAuth is designed for teams that:
+- Already have their own user database
+- Want OAuth 2.1 / OIDC without the complexity
+- Need a secure, production-ready auth server **without vendor lock-in**
+- Prefer configuration over code
 
----
-
-### 👤 User Authentication (Headless)
-- Users are resolved via **HTTP-based user providers**
-- No local user database
-- Fully decoupled from user persistence
-- Custom user model mapping via YAML
-- User metadata can be mapped into JWT claims
+**We don't believe in locking you into our ecosystem.** WedgeAuth integrates with *your* existing user system via HTTP, doesn't store your users, and can be replaced at any time. Your auth infrastructure should serve you, not trap you.
 
 ---
 
-### 🧠 Sessions & State
-- Authorization sessions stored in:
-    - Redis (recommended)
-    - In-memory cache (default)
-- Stateless access tokens
+## 🚀 How It Works
+
+1. **User tries to log in** → WedgeAuth shows a login page (or you bring your own UI)
+2. **User submits credentials** → WedgeAuth calls *your* HTTP user provider endpoint to validate
+3. **Your system validates** → Returns user data (username, email, roles, etc.)
+4. **WedgeAuth issues tokens** → JWT access tokens signed with your RSA keys
+5. **Your apps verify tokens** → Using the public JWKS endpoint
+
+**No user data is stored in WedgeAuth.** It's a pure authorization layer that delegates authentication to your existing systems.
 
 ---
 
-### 🧩 OAuth Clients
-- **Static client configuration (default)**
-- One public client out-of-the-box
-- PKCE enforced for public clients
-- Configurable redirect URIs
-- Configurable scopes
+## ✨ What WedgeAuth Does (Now)
 
-Optional (via database):
-- Multiple OAuth clients
-- Multiple redirect URIs per client
-- Confidential clients
-- Client revocation
+### 🔑 Core OAuth 2.1 / OpenID Connect
+- ✅ Authorization Code flow with **PKCE required by default**
+- ✅ OpenID Connect support
+- ✅ JWT access tokens (asymmetric RSA signing only)
+- ✅ JWKS endpoint for token verification
+- ✅ Token introspection
+- ✅ Token revocation
+- ✅ Logout with OIDC RP-Initiated Logout support
 
----
+### 👤 Headless User Authentication
+- ✅ **HTTP-based user providers** — integrate with any user system via REST API
+- ✅ No local user database required
+- ✅ Custom user model mapping via YAML
+- ✅ User metadata mapped into JWT claims
+- ✅ Per-client user provider configuration
 
-### 🖥 Login UI
-- Built-in login page (Thymeleaf)
-- Customizable templates
-- External login UI support
-- Headless-first design
+### 🔐 Multi-Factor Authentication (MFA)
+- ✅ TOTP-based MFA (Time-based One-Time Passwords)
+- ✅ QR code generation for authenticator apps
+- ✅ MFA enrollment flow
+- ✅ MFA verification during login
+- ✅ Per-user MFA configuration
 
----
+### 🧠 Session Management
+- ✅ Redis-backed sessions (recommended for production)
+- ✅ In-memory sessions (default, for development)
+- ✅ Configurable session TTL
+- ✅ Distributed session support for multi-instance deployments
 
-### 🌐 Social Login (Optional)
-- OAuth login via external identity providers:
-    - Google
-    - Facebook
-    - Others (extensible)
-- Fully configurable via `application.yml`
-- After successful social login:
-    - User is resolved
-    - Metadata is mapped
-    - **WedgeAuth issues its own tokens**
+### 🧩 OAuth Client Management
+- ✅ **YAML-based client configuration** (default, no database needed)
+- ✅ **Database-backed clients** (PostgreSQL, MySQL 8.0+, SQL Server 2012+)
+- ✅ Public and confidential clients
+- ✅ PKCE enforcement for public clients
+- ✅ Configurable redirect URIs and scopes
+- ✅ Client secret bcrypt hashing
+- ✅ Multi-tenant support (experimental)
 
-> External providers authenticate the user.  
-> **WedgeAuth remains the token issuer.**
+### 🖥️ Customizable Login UI
+- ✅ Built-in Thymeleaf templates with i18n support
+- ✅ **Fully customizable login UI** — bring your own HTML/CSS/JS
+- ✅ Multiple pre-built themes available
+- ✅ External static file serving
+- ✅ See [`docs/CUSTOM_LOGIN_TUTORIAL.md`](https://github.com/KuneiFormApp/wedge-custom-login/blob/main/README.md) for details
 
----
-
-### ⚙️ Configuration-First
-- All features enabled/disabled via YAML
-- No database required by default
-- Minimal setup for a working OAuth flow
-- Progressive complexity model
-
----
-
-## 🧱 What WedgeAuth **Can Do (Optional Features)**
-
-These features are **disabled by default** and can be enabled by configuration.
-
-- JDBC-based persistence (PostgreSQL)
-- Persistent OAuth clients
-- Refresh tokens & rotation
-- Token revocation persistence
-- Multiple login providers
-- External login UI
-- Multi-tenant support (planned)
-- Consent screen (planned)
-- Audit logging (planned)
+### ⚙️ Configuration-First Design
+- ✅ YAML or environment variable configuration
+- ✅ No database required by default
+- ✅ Configurable JWT key management (runtime or file-based)
+- ✅ Extensive environment variable support
+- ✅ See [`docs/environment-variables.md`](docs/environment-variables.md) for all options
 
 ---
 
-## 🚫 What WedgeAuth **Does NOT Do**
+## 🚧 What's In Progress
 
-- ❌ User management
-- ❌ Password storage
-- ❌ Identity provider replacement
-- ❌ Resource server functionality
-- ❌ Implicit flow
-- ❌ Symmetric (HMAC) JWT signing
-- ❌ Admin UI (for now)
-- ❌ Dynamic Client Registration (RFC)
+### 🌐 Social Login
+> **Status**: Planned, not yet implemented
+
+When implemented, this will:
+- Allow OAuth login via Google, GitHub, Microsoft, etc.
+- Be fully configurable via YAML or environment variables
+- Map external provider data to your user model
+- **WedgeAuth will remain the token issuer** (no vendor lock-in)
+
+### 🛡️ Additional Features (Planned)
+- ⏳ Audit logging for compliance
+- ⏳ Admin UI for client/user management
+- ⏳ Rate limiting and brute-force protection
+
+---
+
+## 🚫 What WedgeAuth Does NOT Do
+
+WedgeAuth is **not** a complete identity platform. It deliberately does not:
+
+- ❌ Store or manage users (you own your users)
+- ❌ Store passwords (your user provider does that)
+- ❌ Act as a resource server
+- ❌ Support legacy flows (Implicit, Password Grant)
+- ❌ Support symmetric (HMAC) JWT signing
+
+**This is by design.** WedgeAuth is a focused authorization server that integrates with your existing systems.
 
 ---
 
 ## 🎯 Design Principles
 
-- Headless by design
-- Secure by default
-- Configuration over convention
-- Progressive complexity
-- Framework as an infrastructure detail
-- Hexagonal architecture
+- **No vendor lock-in** — Own your auth, own your users, own your data
+- **Headless by design** — Integrate with any frontend or user system
+- **Secure by default** — PKCE required, asymmetric signing, bcrypt hashing
+- **Configuration over code** — YAML-driven setup, minimal boilerplate
+- **Progressive complexity** — Start simple (no DB), scale when needed (Redis, DB)
+- **Hexagonal architecture** — Domain logic independent of frameworks
+- **Production-ready** — Built on Spring Authorization Server with enterprise patterns
 
 ---
 
-## 🚀 Quick Start Philosophy
+## 📚 Documentation
+
+- **[Deployment Guide](docs/deployment-guide.md)** — Get it running easily with Docker
+- **[Docker Compose Examples](docs/docker-compose-examples.md)** — Ready-to-use configurations
+- **[Environment Variables](docs/environment-variables.md)** — Complete configuration reference
+- **[Custom Login Tutorial](docs/CUSTOM_LOGIN_TUTORIAL.md)** — Customize the login UI
+- **[PKCE Testing Guide](docs/oauth2-pkce-testing-guide.md)** — Manual OAuth 2.1 PKCE flow testing
+- **[RSA Key Generation](docs/key-generation-rsa.md)** — Generate production JWT signing keys
+- **[MFA User Guide](docs/mfa-user-guide.md)** — Multi-factor authentication setup
+- **[MFA Architecture](docs/mfa-architecture.md)** — Technical MFA implementation details
+- **[Logout Usage](docs/logout-usage.md)** — OIDC logout flow documentation
+
+---
+
+## 🚀 Quick Start
 
 > **Run first, customize later.**
 
-WedgeAuth is designed to:
-- start without a database
-- expose a secure OAuth flow immediately
-- scale only when needed
+### Option 1: Docker (Recommended)
+
+See [`docs/deployment-guide.md`](docs/deployment-guide.md) for complete examples with PostgreSQL, Redis, and various configuration modes.
+
+### Option 2: Build from Source
+
+```bash
+cd infraestructure
+./gradlew bootJar
+java -jar build/libs/wedge-authorization-server-*.jar
+```
+
+**Default endpoints:**
+- Authorization: `http://localhost:9000/oauth2/authorize`
+- Token: `http://localhost:9000/oauth2/token`
+- JWKS: `http://localhost:9000/oauth2/jwks`
+- Login: `http://localhost:9000/login`
 
 ---
+
 ## 📦 Technology Stack
 
-- Java 25
-- Spring Boot 4.0.0
-- Spring Authorization Server
-- Redis (optional)
-- PostgreSQL (optional)
-- Thymeleaf (optional UI)
+- **Java 25** (LTS)
+- **Spring Boot 4.0.1**
+- **Spring Authorization Server**
+- **Redis** (optional, for distributed sessions)
+- **PostgreSQL / MySQL / SQL Server** (optional, for client storage)
+- **Thymeleaf**
 
 ---
 
 ## 🧪 Ideal Use Cases
 
-- SPA authentication (Authorization Code + PKCE)
-- Internal authentication infrastructure
-- Microservice ecosystems
-- Teams that already own user data
-- Headless-first systems
+- ✅ SPA authentication (Authorization Code + PKCE)
+- ✅ Internal authentication infrastructure
+- ✅ Microservice ecosystems
+- ✅ Teams that already own user data
+- ✅ Headless-first systems
+- ✅ Organizations avoiding vendor lock-in
 
 ---
 
 ## 📄 License
 
-Apache License 2.0
+**AGPLv3 License**
+
+This means:
+- ✅ Free to use, modify, and distribute
+- ✅ Source code must remain open if you modify and distribute
+- ✅ Network use triggers copyleft (if you run a modified version as a service, you must share your changes)
+
+**We chose AGPLv3 to prevent vendor lock-in at the license level too.** Your auth should be open and auditable.
 
 ---
 
 ## 🧠 TL;DR
 
-**WedgeAuth authenticates users and issues tokens.  
-You own your users.**
+**WedgeAuth authenticates users and issues tokens.**  
+**You own your users. You own your data. No lock-in.**
 
 ---
 

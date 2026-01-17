@@ -1,0 +1,276 @@
+# ==============================================================================
+# Server Configuration
+# ==============================================================================
+server:
+  # Port where the authorization server will run
+  port: ${WEDGE_AUTH_SERVER_PORT:9001}
+  servlet:
+    # Context path for the application
+    context-path: ${SERVER_CONTEXT_PATH:/}
+    session:
+      # HTTP session timeout in seconds (defaults to 600s / 10m)
+      timeout: ${wedge.session.ttl:600}s
+
+# ==============================================================================
+# Spring Boot Standard Configuration
+# ==============================================================================
+spring:
+  application:
+     # Name of the application used in logs and metrics
+    name: ${SPRING_APPLICATION_NAME:wedge-authorization-server}
+  autoconfigure:
+    # Exclude DataSource auto-configuration as we manually configure it based on 'wedge.client-storage.type'
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      # Exclude Session auto-configuration as we manually use @EnableRedisHttpSession conditionally
+      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
+  threads:
+    virtual:
+      # Enable Java 21+ Virtual Threads for high-throughput concurrency
+      enabled: ${SPRING_THREADS_VIRTUAL_ENABLED:true}
+  # Spring Session configuration (used when wedge.session.storage-type=redis)
+  session:
+    redis:
+      # Namespace for HTTP session keys - mapped from wedge config
+      namespace: ${wedge.session.redis.http-namespace:wedge:http:session}
+    # Session idle timeout - mapped from wedge config
+    timeout: ${wedge.session.http-ttl:1800}s
+
+# ==============================================================================
+# WedgeAuth Custom Configuration
+# ==============================================================================
+wedge:
+  # ----------------------------------------------------------------------------
+  # Client Storage Configuration
+  # Determines where OAuth clients are stored (YAML vs Database)
+  # ----------------------------------------------------------------------------
+  client-storage:
+    # Storage type: none (YAML-only), postgresql, mysql, or sqlserver
+    type: ${CLIENT_STORAGE_TYPE:none}
+    
+    # Database Connection Settings (only used when type != none)
+    url: ${CLIENT_DB_URL:jdbc:postgresql://localhost:5432/oauth2_clients}
+    username: ${CLIENT_DB_USERNAME:postgres}
+    password: ${CLIENT_DB_PASSWORD:postgres}
+    driver-class-name: ${CLIENT_DB_DRIVER:org.postgresql.Driver}
+    
+    # Database Schema Settings
+    schema-name: ${CLIENT_DB_SCHEMA:public}
+    # Whether to automatically create the schema if it doesn't exist (Flyway)
+    auto-create-schema: ${CLIENT_DB_AUTO_CREATE_SCHEMA:false}
+    
+    # HikariCP Connection Pool Settings for high performance
+    max-pool-size: ${CLIENT_DB_POOL_SIZE:10}
+    min-idle: ${CLIENT_DB_MIN_IDLE:5}
+    connection-timeout: ${CLIENT_DB_CONNECTION_TIMEOUT:30000}
+    idle-timeout: ${CLIENT_DB_IDLE_TIMEOUT:600000}
+    max-lifetime: ${CLIENT_DB_MAX_LIFETIME:1800000}
+    auto-commit: ${CLIENT_DB_AUTO_COMMIT:true}
+
+  # ----------------------------------------------------------------------------
+  # Tenant Configuration
+  # Multi-tenancy support: each tenant has its own user provider configuration
+  # ----------------------------------------------------------------------------
+  tenants:
+    - id: ${DEFAULT_TENANT_ID:default-tenant}
+      name: ${DEFAULT_TENANT_NAME:Default Tenant}
+      user-provider:
+        # User Provider API endpoint for validating users and fetching claims
+        endpoint: ${USER_PROVIDER_ENDPOINT:http://localhost:8081/api/users/validate}
+        # Timeout for User Provider API calls in milliseconds
+        timeout: ${USER_PROVIDER_TIMEOUT:5000}
+        # MFA Registration endpoint (use {userId} as placeholder)
+        mfa-registration-endpoint: ${USER_PROVIDER_MFA_ENDPOINT:http://localhost:8081/api/users/{userId}/mfa}
+
+  # ----------------------------------------------------------------------------
+  # OAuth Clients (YAML Storage)
+  # Loaded when wedge.client-storage.type is set to 'none'
+  # ----------------------------------------------------------------------------
+  clients:
+    # Example: Public SPA Client (PKCE required, No Client Secret)
+    - client-id: ${PUBLIC_CLIENT_ID:public-spa-client}
+      client-secret: # Empty for public clients
+      client-name: ${PUBLIC_CLIENT_NAME:Public SPA Client}
+      # Authentication methods allowed (e.g., none for public clients, client_secret_basic for backend)
+      client-authentication-methods: ${PUBLIC_CLIENT_AUTH_METHODS:none}
+      # Grant types: authorization_code, refresh_token, client_credentials
+      authorization-grant-types: ${PUBLIC_CLIENT_GRANT_TYPES:authorization_code,refresh_token}
+      # Allowed redirect URIs after successful login
+      redirect-uris: ${PUBLIC_CLIENT_REDIRECT_URIS:http://localhost:3000/callback,http://localhost:3000/silent-renew}
+      # Allowed redirect URIs after logout
+      post-logout-redirect-uris: ${PUBLIC_CLIENT_POST_LOGOUT_URIS:http://localhost:3000/}
+      # Scopes allowed for this client
+      scopes: ${PUBLIC_CLIENT_SCOPES:openid,profile,email,read,write,offline_access}
+      # Whether user consent screen is required
+      require-authorization-consent: ${PUBLIC_CLIENT_REQUIRE_CONSENT:false}
+      # Require Proof Key for Code Exchange (PKCE) - Essential for public clients
+      require-pkce: ${PUBLIC_CLIENT_REQUIRE_PKCE:true}
+      # Tenant this client belongs to
+      tenant-id: ${PUBLIC_CLIENT_TENANT_ID:default-tenant}
+
+    # Example: Confidential Backend Client (Client Secret required)
+    - client-id: ${CONFIDENTIAL_CLIENT_ID:confidential-backend-client}
+      client-secret: ${CONFIDENTIAL_CLIENT_SECRET:secret}
+      client-name: ${CONFIDENTIAL_CLIENT_NAME:Confidential Backend Client}
+      client-authentication-methods: ${CONFIDENTIAL_CLIENT_AUTH_METHODS:client_secret_basic,client_secret_post}
+      authorization-grant-types: ${CONFIDENTIAL_CLIENT_GRANT_TYPES:client_credentials,authorization_code,refresh_token}
+      redirect-uris: ${CONFIDENTIAL_CLIENT_REDIRECT_URIS:http://localhost:8082/callback}
+      post-logout-redirect-uris: ${CONFIDENTIAL_CLIENT_POST_LOGOUT_URIS:http://localhost:8082/}
+      scopes: ${CONFIDENTIAL_CLIENT_SCOPES:openid,profile,email,admin,offline_access}
+      require-authorization-consent: ${CONFIDENTIAL_CLIENT_REQUIRE_CONSENT:false}
+      require-pkce: ${CONFIDENTIAL_CLIENT_REQUIRE_PKCE:true}
+      tenant-id: ${CONFIDENTIAL_CLIENT_TENANT_ID:default-tenant}
+
+  # ----------------------------------------------------------------------------
+  # Session Storage Configuration
+  # Controls where user authentication sessions are stored
+  # ----------------------------------------------------------------------------
+  session:
+    # Storage type: in-memory (default) or redis (for distributed setups)
+    # Storage type: in-memory (default) or redis (for distributed setups)
+    storage-type: ${SESSION_STORAGE_TYPE:in-memory}
+    
+    # Auth Session TTL (PKCE) in seconds (default: 10 minutes)
+    auth-ttl: ${AUTH_SESSION_TTL:600}
+    
+    # HTTP Session idle timeout in seconds (default: 30 minutes)
+    # Note: This is an IDLE timeout, not a TTL - session resets on each request
+    http-ttl: ${HTTP_SESSION_TIMEOUT:1800}
+
+    # Max concurrent sessions in memory (ignored if redis is used)
+    max-size: ${SESSION_MAX_SIZE:10000}
+    
+    # Redis Configuration (shared by Session and Token storage if configured)
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:passwordtest}
+      username: ${REDIS_USERNAME:redistest}
+      database: ${REDIS_DATABASE:0}
+      # Namespace for session keys in Redis (PKCE flow, not user login)
+      namespace: ${AUTH_SESSION_NAMESPACE:wedge:auth:session}
+      # Namespace for Spring Session (HTTP)
+      http-namespace: ${HTTP_SESSION_NAMESPACE:wedge:http:session}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+
+  # ----------------------------------------------------------------------------
+  # Consent Storage Configuration
+  # Controls where user consent data is stored (should match client-storage.type)
+  # ----------------------------------------------------------------------------
+  consent:
+    storage-type: ${CLIENT_STORAGE_TYPE:in-memory}
+
+  # ----------------------------------------------------------------------------
+  # Multi-Tenancy Configuration
+  # Controls whether multiple issuers/tenants are supported
+  # ----------------------------------------------------------------------------
+  multi-tenancy:
+    # Enable multi-issuer support for path-based tenancy /{tenant}/oauth2/authorize
+    enabled: ${MULTI_TENANCY_ENABLED:false}
+    # Default tenant when multi-tenancy is disabled or tenant cannot be resolved
+    default-tenant: ${DEFAULT_TENANT_ID:default-tenant}
+
+  # ----------------------------------------------------------------------------
+  # OAuth2 Token Configuration
+  # ----------------------------------------------------------------------------
+  oauth2:
+    tokens:
+      # Whether to issue refresh tokens
+      refresh-token-enabled: ${IS_REFRESH_TOKEN_ENABLED:true}
+      # Access Token Type-Length-Value (TTL) in seconds (default: 30 minutes)
+      access-token-ttl: ${ACCESS_TOKEN_TTL:1800}
+      # Refresh Token TTL in seconds (default: 30 days)
+      refresh-token-ttl: ${REFRESH_TOKEN_TTL:2592000}
+
+  # ----------------------------------------------------------------------------
+  # OAuth2 Token Storage Configuration
+  # Controls where issued tokens/authorizations are stored
+  # ----------------------------------------------------------------------------
+  token-storage:
+    # Defaults to same type as session storage (in-memory or redis)
+    type: ${SESSION_STORAGE_TYPE:in-memory}
+    # Max TTL for stored tokens (backup limit)
+    max-ttl: ${TOKEN_STORAGE_MAX_TTL:2592000}
+    # Caffeine Cache size limit (for in-memory storage)
+    max-size: ${TOKEN_STORAGE_MAX_SIZE:50000}
+    redis:
+      namespace: ${REDIS_TOKEN_NAMESPACE:wedge:oauth2:auth}
+      # Note: Inherits connection details from wedge.session.redis
+
+  # ----------------------------------------------------------------------------
+  # JWT (JSON Web Token) Signing Configuration
+  # ----------------------------------------------------------------------------
+  jwt:
+    # Issuer URL claim (iss) put into tokens
+    issuer: ${JWT_ISSUER:http://localhost:9001}
+    # Key source: 'test' (generated on startup) or 'file' (PEM/JKS from disk)
+    key-type: ${JWT_KEY_TYPE:test}
+    # Key size for generated RSA keys (test mode only)
+    key-size: ${JWT_KEY_SIZE:2048}
+    # Key ID (kid) for JWT signing (required if key-type=file)
+    key-id: ${JWT_KEY_ID:wedge-jwt-key}
+    # Paths to RSA keys (required if key-type=file)
+    private-key-path: ${JWT_PRIVATE_KEY_PATH:}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+
+  # ----------------------------------------------------------------------------
+  # Global Authorization Server Settings
+  # ----------------------------------------------------------------------------
+  # List of all supported scopes across the system
+  scopes: ${WEDGE_SCOPES:openid,profile,email,read,write,admin,offline_access}
+
+  # ----------------------------------------------------------------------------
+  # Frontend Customization
+  # ----------------------------------------------------------------------------
+  frontend:
+    # Path to custom Thymeleaf templates (e.g., file:///opt/wedge/templates)
+    templates-path: ${FRONTEND_TEMPLATES_PATH:classpath:templates}
+    # Path to custom static assets (CSS/JS/Images)
+    static-path: ${FRONTEND_STATIC_PATH:classpath:static}
+    # Path to internationalization message bundles
+    i18n-basename: ${FRONTEND_I18N_BASENAME:classpath:i18n/messages}
+    # Default locale if none specified by browser
+    default-locale: ${FRONTEND_DEFAULT_LOCALE:en}
+    # Supported locales for UI
+    supported-locales: ${FRONTEND_SUPPORTED_LOCALES:en,es}
+
+  # ----------------------------------------------------------------------------
+  # Login Behavior Configuration
+  # ----------------------------------------------------------------------------
+  login:
+    # Redirect mode when user logs in directly without OAuth context
+    # Options: NO_APPLICATION, DEFAULT_CLIENT, ACCOUNT_PAGE
+    # - NO_APPLICATION: Show "application not configured" page (Auth0 style)
+    # - DEFAULT_CLIENT: Redirect to configured default client
+    # - ACCOUNT_PAGE: Redirect to account management page
+    default-redirect-mode: ${DEFAULT_REDIRECT_MODE:NO_APPLICATION}
+    # Default client configuration (required if mode is DEFAULT_CLIENT)
+    default-client-id: ${DEFAULT_LOGIN_CLIENT_ID:}
+    default-redirect-uri: ${DEFAULT_LOGIN_REDIRECT_URI:}
+
+# ==============================================================================
+# Logging Configuration
+# ==============================================================================
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    com.kuneiform: ${LOGGING_LEVEL_APP:DEBUG}
+    # Token generation logic
+    com.kuneiform.infraestructure.config.OAuth2TokenGeneratorConfig: ${LOGGING_LEVEL_TOKEN_GEN:DEBUG}
+    # Spring Security OAuth2 internals
+    org.springframework.security.oauth2.server.authorization.token: ${LOGGING_LEVEL_OAUTH2_TOKEN:DEBUG}
+    org.springframework.security: ${LOGGING_LEVEL_SECURITY:DEBUG}
+    # Web security filter chain details
+    org.springframework.security.web: ${LOGGING_LEVEL_SECURITY_WEB:TRACE}
+    org.springframework.security.oauth2: ${LOGGING_LEVEL_OAUTH2:TRACE}
+
+# ==============================================================================
+# Management / Actuator Endpoints
+# ==============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose all operational endpoints (health, metrics, etc.)
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:*}
