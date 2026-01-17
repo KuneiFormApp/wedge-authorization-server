@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{no.application.title}">No Application Configured</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="logo-container">
+                    <!-- OAuth icon -->
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        <path d="M12 5V2M12 22v-3M19 12h3M2 12h3" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                    <h1 th:text="#{no.application.title}">No Application Configured</h1>
+                </div>
+            </div>
+
+            <div class="info-message">
+                <p th:text="#{no.application.message}">
+                    This is an OAuth2 authorization server. To sign in to an application, please use the
+                    application's login button.
+                </p>
+            </div>
+
+            <div th:if="${user}" class="user-info">
+                <p>Logged in as: <strong th:text="${user.username}">user@example.com</strong></p>
+            </div>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="btn-logout">
+                    <span th:text="#{no.application.logout}">Logout</span>
+                </button>
+            </form>
+
+            <div class="footer">
+                <p><span th:text="#{login.footer.secured}">Secured by</span> <strong>WedgeAuth</strong></p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{account.title}">Account</title>
+    <link rel="stylesheet" th:href="@{/css/account.css}">
+</head>
+
+<body>
+    <div class="account-container">
+        <!-- Success/Error Messages -->
+        <div th:if="${success}" class="alert alert-success">
+            <span th:text="#{${success}}">Success message</span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <span th:text="#{${error}}">Error message</span>
+        </div>
+
+        <!-- Account Header -->
+        <div class="account-header">
+            <h1 th:text="#{account.title}">My Account</h1>
+            <p th:text="#{account.subtitle}">Manage your authorized applications and trusted devices</p>
+        </div>
+
+        <!-- User Info -->
+        <div class="user-info">
+            <p><strong th:text="#{account.loggedInAs}">Logged in as:</strong> <span
+                    th:text="${user.username}">user@example.com</span></p>
+        </div>
+
+        <!-- Authorized Applications Section -->
+        <div class="section">
+            <h2 class="section-title" th:text="#{account.apps.title}">Authorized Applications</h2>
+
+            <div th:if="${#lists.isEmpty(consents)}" class="empty-state">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                <p th:text="#{account.apps.empty}">You haven't authorized any applications yet.</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(consents)}" class="apps-grid">
+                <div th:each="consent : ${consents}" class="app-card">
+                    <div class="app-header">
+                        <!-- App Logo or Placeholder -->
+                        <img th:if="${consent.imageUrl != null and !consent.imageUrl.isEmpty()}"
+                            th:src="${consent.imageUrl}" th:alt="${consent.clientName}" class="app-logo">
+                        <div th:if="${consent.imageUrl == null or consent.imageUrl.isEmpty()}"
+                            class="app-logo-placeholder"
+                            th:text="${#strings.substring(consent.clientName, 0, 1).toUpperCase()}">A</div>
+
+                        <div class="app-info">
+                            <h3 th:text="${consent.clientName}">Application Name</h3>
+                        </div>
+                    </div>
+
+                    <!-- Granted Scopes with Icons -->
+                    <div>
+                        <strong th:text="#{account.apps.scopes}">Permissions:</strong>
+                        <ul class="scope-list">
+                            <li th:each="scope : ${consent.grantedScopes}" class="scope-item">
+                                <!-- Scope Icon -->
+                                <svg class="scope-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <!-- Profile scope icon -->
+                                    <circle th:if="${scope == 'profile' or scope == 'openid'}" cx="12" cy="8" r="4">
+                                    </circle>
+                                    <path th:if="${scope == 'profile' or scope == 'openid'}"
+                                        d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+
+                                    <!-- Email scope icon -->
+                                    <path th:if="${scope == 'email'}"
+                                        d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                                    </path>
+                                    <polyline th:if="${scope == 'email'}" points="22,6 12,13 2,6"></polyline>
+
+                                    <!-- Read scope icon -->
+                                    <path th:if="${#strings.contains(scope, 'read')}"
+                                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle th:if="${#strings.contains(scope, 'read')}" cx="12" cy="12" r="3"></circle>
+
+                                    <!-- Write scope icon -->
+                                    <path th:if="${#strings.contains(scope, 'write')}"
+                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path th:if="${#strings.contains(scope, 'write')}"
+                                        d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+
+                                    <!-- Default icon -->
+                                    <circle
+                                        th:unless="${scope == 'profile' or scope == 'openid' or scope == 'email' or #strings.contains(scope, 'read') or #strings.contains(scope, 'write')}"
+                                        cx="12" cy="12" r="10"></circle>
+                                    <path
+                                        th:unless="${scope == 'profile' or scope == 'openid' or scope == 'email' or #strings.contains(scope, 'read') or #strings.contains(scope, 'write')}"
+                                        d="M9 11l3 3 8-8"></path>
+                                </svg>
+
+                                <div>
+                                    <div class="scope-name" th:text="#{${'scope.' + scope + '.name'}}">[[${scope}]]
+                                    </div>
+                                    <div class="scope-desc" th:text="#{${'scope.' + scope + '.desc'}}"></div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="app-actions">
+                        <a th:if="${consent.accessUrl != null and !consent.accessUrl.isEmpty()}"
+                            th:href="${consent.accessUrl}" class="btn-visit" target="_blank"
+                            th:text="#{account.apps.visit}">Visit App</a>
+
+                        <form th:action="@{/account/consents/{clientId}/revoke(clientId=${consent.clientId})}"
+                            method="post" style="flex: 1;">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <button type="submit" class="btn-revoke" th:text="#{account.apps.revoke}"
+                                onclick="return confirm(document.querySelector('meta[name=confirm-revoke]').content);">
+                                Revoke Access
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trusted Devices Section -->
+        <div class="section">
+            <h2 class="section-title" th:text="#{account.devices.title}">Trusted Devices</h2>
+
+            <div th:if="${#lists.isEmpty(devices)}" class="empty-state">
+                <svg viewBox="0 0 24 24">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <p th:text="#{account.devices.empty}">No trusted devices found.</p>
+            </div>
+
+            <div th:unless="${#lists.isEmpty(devices)}" class="devices-grid">
+                <div th:each="device : ${devices}" class="device-card">
+                    <div class="device-header">
+                        <!-- Device Icon (browser/OS detection) -->
+                        <svg class="device-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <!-- Desktop/Laptop icon -->
+                            <rect
+                                th:if="${#strings.contains(#strings.toLowerCase(device.deviceName), 'windows') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mac') or #strings.contains(#strings.toLowerCase(device.deviceName), 'linux')}"
+                                x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line
+                                th:if="${#strings.contains(#strings.toLowerCase(device.deviceName), 'windows') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mac') or #strings.contains(#strings.toLowerCase(device.deviceName), 'linux')}"
+                                x1="8" y1="21" x2="16" y2="21"></line>
+                            <line
+                                th:if="${#strings.contains(#strings.toLowerCase(device.deviceName), 'windows') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mac') or #strings.contains(#strings.toLowerCase(device.deviceName), 'linux')}"
+                                x1="12" y1="17" x2="12" y2="21"></line>
+
+                            <!-- Mobile/Tablet icon -->
+                            <rect
+                                th:if="${#strings.contains(#strings.toLowerCase(device.deviceName), 'android') or #strings.contains(#strings.toLowerCase(device.deviceName), 'ios') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mobile')}"
+                                x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                            <line
+                                th:if="${#strings.contains(#strings.toLowerCase(device.deviceName), 'android') or #strings.contains(#strings.toLowerCase(device.deviceName), 'ios') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mobile')}"
+                                x1="12" y1="18" x2="12.01" y2="18"></line>
+
+                            <!-- Default device icon -->
+                            <rect
+                                th:unless="${#strings.contains(#strings.toLowerCase(device.deviceName), 'windows') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mac') or #strings.contains(#strings.toLowerCase(device.deviceName), 'linux') or #strings.contains(#strings.toLowerCase(device.deviceName), 'android') or #strings.contains(#strings.toLowerCase(device.deviceName), 'ios') or #strings.contains(#strings.toLowerCase(device.deviceName), 'mobile')}"
+                                x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        </svg>
+
+                        <div class="device-info">
+                            <h4 th:text="${device.deviceName}">Chrome on Windows</h4>
+                            <div class="device-meta">
+                                <span th:text="#{account.devices.lastUsed}">Last used:</span>
+                                <span th:text="${#temporals.format(device.lastUsed, 'MMM dd, yyyy HH:mm')}">Date</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="device-details">
+                        <div class="device-detail-item">
+                            <span class="device-detail-label" th:text="#{account.devices.firstSeen}">First seen:</span>
+                            <span class="device-detail-value"
+                                th:text="${#temporals.format(device.firstSeen, 'MMM dd, yyyy')}">Date</span>
+                        </div>
+                        <div class="device-detail-item">
+                            <span class="device-detail-label" th:text="#{account.devices.ipAddress}">IP Address:</span>
+                            <span class="device-detail-value" th:text="${device.ipAddress}">127.0.0.1</span>
+                        </div>
+                    </div>
+
+                    <form th:action="@{/account/devices/{deviceId}/revoke(deviceId=${device.deviceId})}" method="post"
+                        style="margin-top: 1rem;">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button type="submit" class="btn-revoke" th:text="#{account.devices.revoke}"
+                            onclick="return confirm(document.querySelector('meta[name=confirm-revoke-device]').content);">
+                            Revoke Device
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <div class="back-link">
+            <a th:href="@{/}" th:text="#{account.backToHome}">← Back to Home</a>
+        </div>
+    </div>
+
+    <!-- Confirmation messages in meta tags for JavaScript -->
+    <meta name="confirm-revoke" th:content="#{account.apps.confirmRevoke}">
+    <meta name="confirm-revoke-device" th:content="#{account.devices.confirmRevoke}">
+</body>
+
+</html>

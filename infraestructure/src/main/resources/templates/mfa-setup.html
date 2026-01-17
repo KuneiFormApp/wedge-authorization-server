@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{mfa.setup.title}">MFA Setup - WedgeAuth</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <link rel="stylesheet" th:href="@{/css/mfa.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="login-card mfa-card">
+            <div class="login-header">
+                <div class="logo-container">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#gradient1)" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M2 17L12 22L22 17" stroke="url(#gradient1)" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 12L12 17L22 12" stroke="url(#gradient1)" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="gradient1" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h1 class="logo-text">WedgeAuth</h1>
+                </div>
+                <p class="subtitle" th:text="#{mfa.setup.subtitle}">Set up Two-Factor Authentication</p>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <svg class="alert-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                    <path d="M12 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="12" cy="16" r="1" fill="currentColor" />
+                </svg>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <div class="mfa-instructions">
+                <h2 th:text="#{mfa.setup.instructions.title}">Scan QR Code</h2>
+                <p th:text="#{mfa.setup.instructions.step1}">1. Open your authenticator app (Google Authenticator,
+                    Microsoft Authenticator, Authy, etc.)</p>
+                <p th:text="#{mfa.setup.instructions.step2}">2. Scan the QR code below</p>
+                <p th:text="#{mfa.setup.instructions.step3}">3. Enter the 6-digit code from your app to verify</p>
+            </div>
+
+            <div class="qr-code-container">
+                <img th:src="@{/mfa/qrcode}" alt="QR Code" class="qr-code-image" />
+            </div>
+
+            <form th:action="@{/mfa/setup/regenerate}" method="post" class="regenerate-form"
+                style="margin: -1rem 0 2rem 0; text-align: center;">
+                <button type="submit" class="btn-link" th:text="#{mfa.setup.regenerate}">Regenerate Code</button>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            </form>
+
+            <details class="manual-entry">
+                <summary class="manual-entry-label" th:text="#{mfa.setup.manual.label}"
+                    style="cursor: pointer; color: var(--text-secondary);">Can't scan? Enter this code manually
+                </summary>
+                <div class="secret-display" style="margin-top: 1rem;">
+                    <code th:text="${mfaSecret}" id="mfaSecret">SECRET_KEY_HERE</code>
+                    <button type="button" class="copy-btn" onclick="copySecret()" th:title="#{mfa.setup.copy}">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2" />
+                            <path
+                                d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="manual-entry-hint" th:text="#{mfa.setup.manual.hint}">Account: <span
+                        th:text="${username}">user@example.com</span></p>
+            </details>
+
+            <form th:action="@{/mfa/setup/verify}" method="post" class="mfa-form" id="mfaSetupForm">
+                <div class="form-group">
+                    <label for="code" class="form-label" th:text="#{mfa.setup.code.label}">Verification Code</label>
+                    <input type="text" id="code" name="code" class="form-input mfa-code-input"
+                        th:placeholder="#{mfa.setup.code.placeholder}" required maxlength="6" pattern="[0-9]{6}"
+                        autocomplete="off" inputmode="numeric" autofocus>
+                    <span class="form-hint" th:text="#{mfa.setup.code.hint}">Enter the 6-digit code from your
+                        authenticator app</span>
+                </div>
+
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span class="btn-text" th:text="#{mfa.setup.submit}">Verify and Enable MFA</span>
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M12 5L19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </form>
+
+            <div class="footer-text">
+                <p><span th:text="#{login.footer.secured}">Secured by</span> <strong>WedgeAuth</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/mfa.js}"></script>
+</body>
+
+</html>
