@@ -3,6 +3,7 @@ package com.kuneiform.application.usecase;
 import com.kuneiform.domain.model.User;
 import com.kuneiform.domain.port.UserProviderPort;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +24,7 @@ public class AuthenticateUserUseCase {
    * @return Optional containing the authenticated User if successful, empty otherwise
    */
   public Optional<User> execute(
-      String clientId, String tenantId, String username, String password) {
+      String clientId, String tenantId, String username, String password, Set<String> scopes) {
     log.debug("Authenticating user: {} for client: {} (tenant: {})", username, clientId, tenantId);
 
     if (clientId == null && tenantId == null) {
@@ -47,7 +48,7 @@ public class AuthenticateUserUseCase {
     }
 
     Optional<User> user =
-        userProviderPort.validateCredentials(clientId, tenantId, username, password);
+        userProviderPort.validateCredentials(clientId, tenantId, username, password, scopes);
 
     if (user.isPresent()) {
       log.info("User authenticated successfully: {} for client: {}", username, clientId);

@@ -18,4 +18,10 @@ public class UserProvider {
    * actual user ID. Example: "http://localhost:8080/api/v1/users/{userId}/mfa"
    */
   String mfaRegistrationEndpoint;
+
+  /**
+   * URL template for scope validation endpoint. The {userId} placeholder will be replaced with the
+   * actual user ID. Example: "http://localhost:8080/api/v1/users/{userId}/scopes"
+   */
+  String scopesValidationEndpoint;
 }

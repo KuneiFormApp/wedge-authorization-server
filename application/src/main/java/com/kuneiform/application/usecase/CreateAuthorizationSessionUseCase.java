@@ -5,10 +5,12 @@ import com.kuneiform.domain.model.OAuthClient;
 import com.kuneiform.domain.model.User;
 import com.kuneiform.domain.port.ClientRepository;
 import com.kuneiform.domain.port.SessionStorage;
+import com.kuneiform.domain.port.UserProviderPort;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +21,7 @@ public class CreateAuthorizationSessionUseCase {
 
   private final ClientRepository clientRepository;
   private final SessionStorage sessionStorage;
+  private final UserProviderPort userProviderPort;
   private final int sessionTtlSeconds;
 
   /**
@@ -64,10 +67,25 @@ public class CreateAuthorizationSessionUseCase {
     }
 
     Set<String> authorizedScopes =
-        scopes.stream().filter(client::isAllowedScope).collect(java.util.stream.Collectors.toSet());
+        scopes.stream().filter(client::isAllowedScope).collect(Collectors.toSet());
 
     if (authorizedScopes.isEmpty()) {
       log.warn("No valid scopes requested for client: {}", clientId);
+      return Optional.empty();
+    }
+
+    // Double-check strategy: Validate scopes with User Provider
+    // This catches scenarios where the user is already authenticated but not authorized for these
+    // scopes
+    boolean scopesValid =
+        userProviderPort.validateScopes(
+            clientId, client.getTenantId(), user.getUserId(), authorizedScopes);
+    if (!scopesValid) {
+      log.warn(
+          "User provider rejected scopes: {} for user: {} and client: {}",
+          authorizedScopes,
+          user.getUserId(),
+          clientId);
       return Optional.empty();
     }
 

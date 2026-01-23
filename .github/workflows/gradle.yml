@@ -28,3 +28,13 @@ jobs:
 
     - name: Build with Gradle
       run: ./gradlew build
+
+    - name: Upload test reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: |
+          application/build/test-results/
+          domain/build/test-results/
+          infrastructure/build/test-results/

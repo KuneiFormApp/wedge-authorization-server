@@ -8,6 +8,7 @@ import com.kuneiform.domain.model.OAuthClient;
 import com.kuneiform.domain.model.User;
 import com.kuneiform.domain.port.ClientRepository;
 import com.kuneiform.domain.port.SessionStorage;
+import com.kuneiform.domain.port.UserProviderPort;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ class CreateAuthorizationSessionUseCaseTest {
 
   @Mock private ClientRepository clientRepository;
   @Mock private SessionStorage sessionStorage;
+  @Mock private UserProviderPort userProviderPort; // Added mock
 
   private CreateAuthorizationSessionUseCase useCase;
   private User testUser;
@@ -29,7 +31,9 @@ class CreateAuthorizationSessionUseCaseTest {
 
   @BeforeEach
   void setUp() {
-    useCase = new CreateAuthorizationSessionUseCase(clientRepository, sessionStorage, 600);
+    useCase =
+        new CreateAuthorizationSessionUseCase(
+            clientRepository, sessionStorage, userProviderPort, 600); // Updated constructor
 
     testUser = User.builder().userId("user-123").username("testuser").build();
 
@@ -39,7 +43,10 @@ class CreateAuthorizationSessionUseCaseTest {
             .redirectUris(Set.of("http://localhost:3000/callback"))
             .scopes(Set.of("openid", "profile", "email"))
             .requirePkce(true)
+            .tenantId("default-tenant") // Add tenantId for mocking validateScopes
             .build();
+    // Mock validateScopes to return true by default
+    lenient().when(userProviderPort.validateScopes(any(), any(), any(), any())).thenReturn(true);
   }
 
   @Test
@@ -71,6 +78,12 @@ class CreateAuthorizationSessionUseCaseTest {
     assertEquals("challenge", savedSession.getCodeChallenge());
     assertEquals("S256", savedSession.getCodeChallengeMethod());
     assertEquals(Set.of("openid", "profile"), savedSession.getAuthorizedScopes());
+    verify(userProviderPort)
+        .validateScopes(
+            eq("test-client"),
+            eq("default-tenant"),
+            eq("user-123"),
+            eq(Set.of("openid", "profile")));
   }
 
   @Test
@@ -89,6 +102,7 @@ class CreateAuthorizationSessionUseCaseTest {
 
     assertTrue(result.isEmpty());
     verifyNoInteractions(sessionStorage);
+    verifyNoInteractions(userProviderPort); // No call to userProviderPort if client not found
   }
 
   @Test
@@ -107,6 +121,8 @@ class CreateAuthorizationSessionUseCaseTest {
 
     assertTrue(result.isEmpty());
     verifyNoInteractions(sessionStorage);
+    verify(userProviderPort, never())
+        .validateScopes(any(), any(), any(), any()); // No call to userProviderPort
   }
 
   @Test
@@ -125,6 +141,8 @@ class CreateAuthorizationSessionUseCaseTest {
 
     assertTrue(result.isEmpty());
     verifyNoInteractions(sessionStorage);
+    verify(userProviderPort, never())
+        .validateScopes(any(), any(), any(), any()); // No call to userProviderPort
   }
 
   @Test
@@ -149,6 +167,12 @@ class CreateAuthorizationSessionUseCaseTest {
 
     AuthorizationSession savedSession = captor.getValue();
     assertEquals(Set.of("openid"), savedSession.getAuthorizedScopes()); // 'admin' filtered out
+    verify(userProviderPort)
+        .validateScopes(
+            eq("test-client"),
+            eq("default-tenant"),
+            eq("user-123"),
+            eq(Set.of("openid"))); // Verify call with filtered scopes
   }
 
   @Test
@@ -167,5 +191,36 @@ class CreateAuthorizationSessionUseCaseTest {
 
     assertTrue(result.isEmpty());
     verifyNoInteractions(sessionStorage);
+    verify(userProviderPort, never())
+        .validateScopes(any(), any(), any(), any()); // No call to userProviderPort
+  }
+
+  @Test
+  void shouldRejectWhenScopesValidationFails() {
+    // Given
+    when(clientRepository.findByClientId("test-client")).thenReturn(Optional.of(testClient));
+    when(userProviderPort.validateScopes(any(), any(), any(), any()))
+        .thenReturn(false); // Simulate failure
+
+    // When
+    Optional<String> result =
+        useCase.execute(
+            testUser,
+            "test-client",
+            "http://localhost:3000/callback",
+            Set.of("openid", "profile"),
+            "state-123",
+            "challenge",
+            "S256");
+
+    // Then
+    assertTrue(result.isEmpty());
+    verifyNoInteractions(sessionStorage); // Session should not be saved
+    verify(userProviderPort)
+        .validateScopes(
+            eq("test-client"),
+            eq("default-tenant"),
+            eq("user-123"),
+            eq(Set.of("openid", "profile"))); // Verify call was made
   }
 }

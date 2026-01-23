@@ -7,4 +7,4 @@ pluginManagement {
 rootProject.name = 'wedge-authorization-server'
 include 'domain'
 include 'application'
-include 'infraestructure'
+include 'infrastructure'

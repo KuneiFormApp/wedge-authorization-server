@@ -27,16 +27,25 @@ sequenceDiagram
     SpringAuthServer->>SpringAuthServer: Validate redirect_uri
     SpringAuthServer->>SpringAuthServer: Store code_challenge in session
     
+    Note over AuthServer: Validate requested scopes with User Provider<br/>(using existing authenticated session)
+    AuthServer->>UserAPI: POST /api/users/{userId}/scopes<br/>{scopes}
+    UserAPI-->>AuthServer: 200 OK (if valid) or 403 Forbidden (if invalid)
+    
+    alt Scopes are invalid (403 Forbidden)
+        AuthServer-->>Browser: Redirect to redirect_uri with error<br/>invalid_scope
+        Browser->>Client: Error: invalid_scope
+    end
+    
     alt User not authenticated
         SpringAuthServer->>Browser: Redirect to /login
         Browser->>AuthServer: GET /login
         AuthServer->>Browser: Show login form
         
-        Browser->>AuthServer: POST /login<br/>(username + password)
+        Browser->>AuthServer: POST /login<br/>(username + password + scopes)
         
         Note over AuthServer: Spring Security processes login
-        AuthServer->>AuthProvider: authenticate(credentials)
-        AuthProvider->>UserAPI: POST /api/users/validate
+        AuthServer->>AuthProvider: authenticate(credentials + scopes)
+        AuthProvider->>UserAPI: POST /api/users/validate<br/>{username, password, scopes}
         UserAPI-->>AuthProvider: User{userId, username, email}
         AuthProvider->>AuthProvider: Create Authentication<br/>with User as principal
         AuthProvider-->>AuthServer: Authentication

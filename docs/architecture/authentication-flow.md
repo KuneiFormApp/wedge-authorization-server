@@ -24,13 +24,13 @@ sequenceDiagram
     Note over AuthManager: Spring calls all registered<br/>AuthenticationProvider beans
     AuthManager->>AuthProvider: authenticate(authentication)
     
-    Note over AuthProvider: Extract client_id from<br/>request context
-    AuthProvider->>AuthProvider: determineClientId()
+    Note over AuthProvider: Extract client_id AND scopes from<br/>request context
+    AuthProvider->>AuthProvider: determineClientContext()
     
-    AuthProvider->>UseCase: execute(clientId, username, password)
-    UseCase->>UserProvider: validateUser(username, password)
+    AuthProvider->>UseCase: execute(clientId, username, password, scopes)
+    UseCase->>UserProvider: validateUser(username, password, scopes)
     
-    UserProvider->>ExternalAPI: POST /api/users/validate<br/>{username, password}
+    UserProvider->>ExternalAPI: POST /api/users/validate<br/>{username, password, scopes}
     ExternalAPI-->>UserProvider: User{userId, username, email,<br/>mfaEnabled, mfaData}
     UserProvider-->>UseCase: User object
     UseCase-->>AuthProvider: Optional<User>

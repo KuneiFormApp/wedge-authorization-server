@@ -56,7 +56,7 @@ code_verifier=wQAQ-uoK8DufeIeoLTKjdSxNTbChMN2kMmCRTa7XLOw
 
 1. **WedgeAuth server running:**
    ```bash
-   ./gradlew :infraestructure:bootRun
+   ./gradlew :infrastructure:bootRun
    ```
 
 2. **User provider configured** with user `alice` (or your test user)
@@ -109,6 +109,8 @@ Replace `YOUR_CODE_CHALLENGE` with the value from the previous step.
 #### 2. Login
 
 Enter your credentials on the premium login page.
+> [!NOTE]
+> During this login phase, the requested `scope` parameter (e.g., `openid profile email`) is now sent to the configured `USER_PROVIDER_ENDPOINT` (`/api/users/validate`) as part of the authentication request body. Your external User Provider API can use this information to perform initial scope validation or return user metadata based on the requested scopes.
 
 #### 3. Get Authorization Code
 
