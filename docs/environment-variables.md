@@ -13,6 +13,8 @@ Complete reference of all environment variables for configuring WedgeAuth.
 - [Token Configuration](#token-configuration)
 - [User Provider](#user-provider)
 - [MFA Configuration](#mfa-configuration)
+- [API Key Configuration](#api-key-configuration)
+- [Circuit Breaker Configuration](#circuit-breaker-configuration)
 - [Account Page & Login Redirect](#account-page--login-redirect)
 - [Frontend Customization](#frontend-customization)
 - [OAuth Client Configuration](#oauth-client-configuration)
@@ -410,6 +412,7 @@ Multi-Factor Authentication (MFA) settings using TOTP (Time-based One-Time Passw
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `USER_PROVIDER_MFA_ENDPOINT` | String | `http://localhost:8081/api/users/{userId}/mfa` | MFA registration endpoint template (use `{userId}` placeholder) |
+| `USER_PROVIDER_SCOPES_VALIDATION_ENDPOINT` | String | `http://localhost:8081/api/users/{userId}/scopes` | Scopes validation API endpoint template (use `{userId}` placeholder) |
 | `MFA_ISSUER_NAME` | String | `WedgeAuth` | Issuer name shown in authenticator apps |
 | `MFA_QR_CODE_SIZE` | Integer | `300` | QR code image size in pixels (width and height) |
 | `MFA_TOTP_TIME_STEP` | Integer | `30` | TOTP time step in seconds (RFC 6238 standard: 30) |
@@ -507,6 +510,50 @@ Required templates:
 Required assets:
 - `css/mfa.css` - MFA page styling
 - `js/mfa.js` - MFA page interactions (auto-submit, copy secret)
+
+---
+
+## API Key Configuration
+
+WedgeAuth supports API key validation for secure communication with the User Provider API.
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `API_KEY_MUST_BE_VALIDATED` | Boolean | `false` | Enable/disable API key validation |
+| `CUSTOM_API_KEY_HEADER` | String | `X-API-Key` | Header name for API key |
+| `CUSTOM_API_KEY` | String | `` | API key value for authentication |
+
+**Example:**
+```bash
+API_KEY_MUST_BE_VALIDATED=true
+CUSTOM_API_KEY_HEADER=X-API-Key
+CUSTOM_API_KEY=prod-api-key-2024
+```
+
+---
+
+## Circuit Breaker Configuration
+
+Controls Resilience4j Circuit Breaker settings for external service calls (User Provider).
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `CIRCUIT_BREAKER_ENABLED` | Boolean | `true` | Enable/disable circuit breaker |
+| `CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD` | Integer | `50` | Failure rate percentage to open circuit (0-100) |
+| `CIRCUIT_BREAKER_MIN_CALLS` | Integer | `10` | Minimum calls before calculating failure rate |
+| `CIRCUIT_BREAKER_HALF_OPEN_CALLS` | Integer | `5` | Permitted calls in half-open state |
+| `CIRCUIT_BREAKER_WAIT_DURATION_MS` | Integer | `60000` | Wait time in open state (ms) before half-open |
+| `CIRCUIT_BREAKER_SLIDING_WINDOW_MS` | Integer | `10000` | Sliding window duration (ms) |
+| `CIRCUIT_BREAKER_WINDOW_TYPE` | Enum | `count_based` | Window type: `count_based` or `time_based` |
+| `CIRCUIT_BREAKER_AUTO_TRANSITION` | Boolean | `true` | Auto transition from open to half-open |
+
+**Example:**
+```bash
+CIRCUIT_BREAKER_ENABLED=true
+CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD=30
+CIRCUIT_BREAKER_MIN_CALLS=5
+CIRCUIT_BREAKER_WAIT_DURATION_MS=15000
+```
 
 ---
 

@@ -47,6 +47,7 @@ WedgeAuth implements TOTP-based (Time-based One-Time Password) Multi-Factor Auth
 │  • TotpService                                              │
 │  • QrCodeService                                            │
 │  • MfaRegistrationService                                   │
+│  • ScopesValidationService                                  │
 └─────────────────────────────────────────────────────────────┘
                             ▲
                             │

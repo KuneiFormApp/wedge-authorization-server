@@ -1,6 +1,7 @@
 package com.kuneiform.domain.port;
 
 import com.kuneiform.domain.model.OAuthClient;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -18,7 +19,7 @@ public interface ClientRepository {
   boolean validateClient(String clientId, String clientSecret);
 
   /** Only supported for database-backed implementations. */
-  default java.util.List<OAuthClient> findAll() {
+  default List<OAuthClient> findAll() {
     throw new UnsupportedOperationException("findAll() not supported for YAML storage");
   }
 

@@ -158,7 +158,7 @@ See [`docs/deployment-guide.md`](docs/deployment-guide.md) for complete examples
 ### Option 2: Build from Source
 
 ```bash
-cd infraestructure
+cd infrastructure
 ./gradlew bootJar
 java -jar build/libs/wedge-authorization-server-*.jar
 ```

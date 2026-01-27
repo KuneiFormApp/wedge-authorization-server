@@ -14,6 +14,8 @@ This guide covers different deployment scenarios for the WedgeAuth Authorization
     - [Secrets Management](#secrets-management)
     - [Docker Run vs Compose](#docker-run-vs-compose)
     - [Custom UI & Localization](#custom-ui--localization)
+    - [API Key Configuration](#api-key-configuration)
+    - [Circuit Breaker Configuration](#circuit-breaker-configuration)
 4. [Alternative Configurations](#alternative-configurations)
     - [YAML-Only Configuration](#yaml-only-configuration)
     - [Multi-Tenant Configuration (Experimental)](#multi-tenant-configuration-experimental)
@@ -58,7 +60,7 @@ version: '3.8'
 
 services:
   wedge-auth:
-    image: ariandel007/wedge-authorization-server:0.0.1-SNAPSHOT
+    image: ariandel007/wedge-authorization-server:0.0.1
     deploy:
       resources:
         limits:
@@ -138,6 +140,21 @@ services:
       DEFAULT_LOGIN_CLIENT_ID: public-local-spa-client
       DEFAULT_LOGIN_REDIRECT_URI: http://[IP_OR_DNS]:3000/
       
+      # API KEY CONFIGURATION
+      API_KEY_MUST_BE_VALIDATED: true
+      CUSTOM_API_KEY_HEADER: X-API-Key
+      CUSTOM_API_KEY: your-secure-api-key
+
+      # CIRCUIT BREAKER CONFIGURATION
+      CIRCUIT_BREAKER_ENABLED: true
+      CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD: 50
+      CIRCUIT_BREAKER_MIN_CALLS: 10
+      CIRCUIT_BREAKER_HALF_OPEN_CALLS: 5
+      CIRCUIT_BREAKER_WAIT_DURATION_MS: 60000
+      CIRCUIT_BREAKER_SLIDING_WINDOW_MS: 10000
+      CIRCUIT_BREAKER_WINDOW_TYPE: count_based
+      CIRCUIT_BREAKER_AUTO_TRANSITION: true
+      
       #TENANCY
       DEFAULT_TENANT_ID: default
 ```
@@ -204,7 +221,7 @@ docker run -d \
   -v /path/to/keys:/app/keys:ro \
   -e CLIENT_DB_PASSWORD=secret \
   -e ... (other env vars) \
-  ariandel007/wedge-authorization-server:0.0.1-SNAPSHOT
+  ariandel007/wedge-authorization-server:0.0.1
 ```
 
 You can connect to **any** Redis or Database (PostgreSQL, MySQL, SQL Server) instance, whether it's running in Docker, on the host, or a managed cloud service.
@@ -214,6 +231,62 @@ You can connect to **any** Redis or Database (PostgreSQL, MySQL, SQL Server) ins
 The static files (HTML, CSS, JS) and i18n properties can be fully customized. You can mount a volume with your own templates.
 
 *   **Guide**: [Custom UI Guide](https://github.com/KuneiFormApp/wedge-custom-login)
+
+### API Key Configuration
+
+WedgeAuth supports API key validation for secure communication with the User Provider API. When enabled, all requests to the User Provider endpoint will include the configured API key in the specified header.
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `API_KEY_MUST_BE_VALIDATED` | Enable/disable API key validation | `false` | `true` |
+| `CUSTOM_API_KEY_HEADER` | Header name for API key | `X-API-Key` | `Authorization` |
+| `CUSTOM_API_KEY` | API key value for authentication | (empty) | `your-secure-api-key` |
+
+**Example Configuration:**
+```yaml
+environment:
+  API_KEY_MUST_BE_VALIDATED: true
+  CUSTOM_API_KEY_HEADER: X-API-Key
+  CUSTOM_API_KEY: prod-api-key-2024
+```
+
+When enabled, WedgeAuth will add the following header to User Provider API requests:
+```
+X-API-Key: your-secure-api-key
+```
+
+### Circuit Breaker Configuration
+
+WedgeAuth uses Resilience4j Circuit Breaker to protect against cascading failures when calling external services like the User Provider API. The circuit breaker automatically opens when failure rates exceed thresholds.
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `CIRCUIT_BREAKER_ENABLED` | Enable/disable circuit breaker | `true` | `true` |
+| `CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD` | Failure rate percentage to open circuit (0-100) | `50` | `60` |
+| `CIRCUIT_BREAKER_MIN_CALLS` | Minimum calls before calculating failure rate | `10` | `20` |
+| `CIRCUIT_BREAKER_HALF_OPEN_CALLS` | Permitted calls in half-open state | `5` | `10` |
+| `CIRCUIT_BREAKER_WAIT_DURATION_MS` | Wait time in open state (ms) before half-open | `60000` | `30000` |
+| `CIRCUIT_BREAKER_SLIDING_WINDOW_MS` | Sliding window duration (ms) | `10000` | `60000` |
+| `CIRCUIT_BREAKER_WINDOW_TYPE` | Window type: `count_based` or `time_based` | `count_based` | `time_based` |
+| `CIRCUIT_BREAKER_AUTO_TRANSITION` | Auto transition from open to half-open | `true` | `false` |
+
+**Circuit Breaker States:**
+
+1. **CLOSED**: Normal operation, calls pass through
+2. **OPEN**: All calls fail immediately (circuit is open)
+3. **HALF_OPEN**: Limited calls allowed to test recovery
+
+**Example Configuration for Aggressive Fallback:**
+```yaml
+environment:
+  CIRCUIT_BREAKER_ENABLED: true
+  CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD: 30    # Open at 30% failures
+  CIRCUIT_BREAKER_MIN_CALLS: 5                  # Evaluate after 5 calls
+  CIRCUIT_BREAKER_HALF_OPEN_CALLS: 3             # Test with 3 calls
+  CIRCUIT_BREAKER_WAIT_DURATION_MS: 15000        # Wait 15 seconds
+  CIRCUIT_BREAKER_SLIDING_WINDOW_MS: 5000        # 5-second window
+  CIRCUIT_BREAKER_WINDOW_TYPE: time_based        # Time-based sliding window
+```
 
 ---
 
@@ -226,7 +299,7 @@ You can run WedgeAuth without a database using just the YAML configuration (Envi
 ```yaml
 services:
   wedge-auth:
-    image: ariandel007/wedge-authorization-server:0.0.1-SNAPSHOT
+    image: ariandel007/wedge-authorization-server:0.0.1
     environment:
       CLIENT_STORAGE_TYPE: "yaml"
       
@@ -324,7 +397,7 @@ VALUES
 
 ## API Contracts
 
-WedgeAuth relies on your external **User Provider API** for user validation and MFA.
+WedgeAuth relies on your external **User Provider API** for user validation, MFA, and scopes validation.
 
 ### User Provider API
 
@@ -333,7 +406,8 @@ WedgeAuth relies on your external **User Provider API** for user validation and 
 ```json
 {
   "username": "user@example.com",
-  "password": "plain-text-password"
+  "password": "plain-text-password",
+  "scopes": ["openid", "profile"]
 }
 ```
 
@@ -358,6 +432,27 @@ WedgeAuth relies on your external **User Provider API** for user validation and 
 }
 ```
 The mfaSecret should be encrypted when is stored and only decrypted when is in transit
+
+### Scopes Validation API
+
+WedgeAuth can call an external endpoint to validate if a user is authorized for a given set of scopes. This is used during the OAuth2 authorization flow.
+
+**Endpoint:** `POST {USER_PROVIDER_SCOPES_VALIDATION_ENDPOINT}`
+- Template: `http://localhost:8081/api/users/{userId}/scopes`
+- `{userId}` is replaced with the actual user ID.
+
+**Request:**
+```json
+{
+  "scopes": ["openid", "admin"]
+}
+```
+
+**Response (Success):**
+HTTP 200 OK (empty body) if scopes are valid.
+
+**Response (Failure):**
+HTTP 403 Forbidden (empty body) if scopes are not valid.
 
 ### MFA Registration API
 
@@ -399,3 +494,74 @@ The behavior of Multi-Factor Authentication depends on the response fields:
     If `"mfaEnabled": true` AND `"twoFaRegistered": true`.
     *   WedgeAuth expects the `mfaSecret` to be present in the response.
     *   The user is redirected to the MFA verification page to enter their TOTP code.
+
+### Error Response Format
+
+When the User Provider API encounters errors, it should respond with the following standardized error format:
+
+**Response (Error):**
+HTTP Status: 4xx/5xx
+
+```json
+{
+  "errorCodes": [
+    "INVALID_CREDENTIALS" // this value should be mapped in the i18n files
+  ],
+  "messages": [
+    "Human-readable error message"
+  ],
+  "errorDate": "2026-01-22T17:58:14Z"
+}
+```
+
+#### Error Codes Reference
+
+| Error Code | Description | Example Message |
+|------------|-------------|----------------|
+| `INVALID_CREDENTIALS` | Username or password is incorrect | "Invalid username or password" |
+| `USER_NOT_FOUND` | User does not exist in the system | "User not found" |
+| `USER_DISABLED` | User account is disabled | "User account is disabled" |
+| `USER_LOCKED` | User account is locked | "User account is locked" |
+| `USER_EXPIRED` | User account has expired | "User account has expired" |
+| `INVALID_REQUEST` | Request format is invalid | "Invalid request format" |
+| `MISSING_USERNAME` | Username field is missing | "Username is required" |
+| `MISSING_PASSWORD` | Password field is missing | "Password is required" |
+| `INVALID_USERNAME_FORMAT` | Username format is invalid | "Invalid username format" |
+| `INVALID_PASSWORD_FORMAT` | Password format is invalid | "Invalid password format" |
+| `MFA_REGISTRATION_FAILED` | MFA registration failed | "MFA registration failed" |
+| `MFA_INVALID_SECRET` | MFA secret is invalid | "Invalid MFA secret" |
+| `MFA_INVALID_KEY_ID` | MFA key ID is invalid | "Invalid MFA key ID" |
+| `MFA_ALREADY_REGISTERED` | MFA is already registered | "MFA is already registered" |
+| `MFA_NOT_SUPPORTED` | MFA is not supported | "MFA is not supported" |
+| `SERVICE_UNAVAILABLE` | Service is temporarily unavailable | "User provider service is unavailable" |
+| `TIMEOUT_ERROR` | Request timed out | "Request timeout" |
+| `NETWORK_ERROR` | Network error occurred | "Network error occurred" |
+| `INTERNAL_SERVER_ERROR` | Internal server error | "Internal server error" |
+| `DATABASE_ERROR` | Database error occurred | "Database error occurred" |
+| `UNAUTHORIZED_CLIENT` | Client is not authorized | "Unauthorized client" |
+| `FORBIDDEN_OPERATION` | Operation is forbidden | "Operation is forbidden" |
+| `RATE_LIMIT_EXCEEDED` | Rate limit was exceeded | "Rate limit exceeded" |
+| `INVALID_ENDPOINT` | User provider endpoint is invalid | "Invalid user provider endpoint" |
+| `MISSING_CONFIGURATION` | Configuration is missing | "Missing user provider configuration" |
+
+#### Internationalization
+
+Error messages should support internationalization. The `messages` array can contain localized messages based on the client's `Accept-Language` header or a specified locale parameter.
+
+**Example with multiple errors:**
+```json
+{
+  "errorCodes": [
+    "INVALID_REQUEST",
+    "MISSING_USERNAME"
+  ],
+  "messages": [
+    "Invalid request format",
+    "Username is required"
+  ],
+  "errorDate": "2026-01-22T17:58:14Z"
+}
+```
+
+> [!IMPORTANT]
+> All error responses from the User Provider API must follow this exact format for WedgeAuth to properly parse and handle errors. The `errorDate` should be an ISO 8601 timestamp in UTC.
