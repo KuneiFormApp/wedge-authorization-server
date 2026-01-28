@@ -12,7 +12,6 @@ import com.kuneiform.domain.port.UserProviderPort;
 import com.kuneiform.infrastructure.adapter.models.MfaDataResponse;
 import com.kuneiform.infrastructure.adapter.models.UserResponse;
 import com.kuneiform.infrastructure.adapter.restclients.UserProviderRestClient;
-
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;

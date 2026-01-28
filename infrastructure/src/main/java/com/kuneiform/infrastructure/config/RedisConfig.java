@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Redis configuration for session storage.
@@ -67,7 +68,7 @@ public class RedisConfig {
 
   @Bean
   public ObjectMapper redisObjectMapper() {
-    return tools.jackson.databind.json.JsonMapper.builder()
+    return JsonMapper.builder()
         .enable(tools.jackson.databind.MapperFeature.INFER_CREATOR_FROM_CONSTRUCTOR_PROPERTIES)
         .build();
   }

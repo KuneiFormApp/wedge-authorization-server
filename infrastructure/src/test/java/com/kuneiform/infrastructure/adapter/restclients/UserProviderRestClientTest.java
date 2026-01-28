@@ -228,7 +228,7 @@ class UserProviderRestClientTest {
     String mfaSecret = "JBSWY3DPEHPK3PXP";
     String mfaKeyId = "WedgeAuth:user@example.com";
 
-    when(restClient.post()).thenReturn(requestBodyUriSpec);
+    when(restClient.patch()).thenReturn(requestBodyUriSpec);
     when(requestBodyUriSpec.uri(mfaEndpoint)).thenReturn(requestBodySpec);
     when(apiKeyProperties.isMustBeValidated()).thenReturn(false);
     when(requestBodySpec.body(any(Map.class))).thenReturn(requestBodySpec);
@@ -241,7 +241,7 @@ class UserProviderRestClientTest {
 
     // Then
     assertTrue(result);
-    verify(restClient).post();
+    verify(restClient).patch();
   }
 
   @Test
@@ -251,7 +251,7 @@ class UserProviderRestClientTest {
     String mfaSecret = "SECRET";
     String mfaKeyId = "App:user";
 
-    when(restClient.post()).thenThrow(new RuntimeException("Network error"));
+    when(restClient.patch()).thenThrow(new RuntimeException("Network error"));
 
     // When & Then
     UserProviderException exception =
@@ -383,7 +383,7 @@ class UserProviderRestClientTest {
             .errorDate(Instant.parse("2026-01-22T17:58:14Z"))
             .build();
 
-    when(restClient.post()).thenReturn(requestBodyUriSpec);
+    when(restClient.patch()).thenReturn(requestBodyUriSpec);
     when(requestBodyUriSpec.uri(mfaEndpoint)).thenReturn(requestBodySpec);
     when(apiKeyProperties.isMustBeValidated()).thenReturn(false);
     when(requestBodySpec.body(any(Map.class))).thenReturn(requestBodySpec);
