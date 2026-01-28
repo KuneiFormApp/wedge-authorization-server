@@ -38,8 +38,7 @@ public class UserProviderRestClient {
   private final UserProviderApiKeyProperties apiKeyProperties;
 
   @CircuitBreaker(name = "userProvider", fallbackMethod = "findByUsernameFallback")
-  public Optional<UserResponse> findByUsername(String endpoint, String username)
-      throws UserProviderException {
+  public Optional<UserResponse> findByUsername(String endpoint, String username) {
     try {
 
       var requestBuilder = restClient.get().uri(endpoint + "/find?username={username}", username);
@@ -58,8 +57,7 @@ public class UserProviderRestClient {
 
   @CircuitBreaker(name = "userProvider", fallbackMethod = "validateCredentialsFallback")
   public Optional<UserResponse> validateCredentials(
-      String endpoint, String username, String password, Set<String> scopes)
-      throws UserProviderException {
+      String endpoint, String username, String password, Set<String> scopes) {
     try {
 
       var requestBuilder = restClient.post().uri(endpoint);
@@ -90,7 +88,7 @@ public class UserProviderRestClient {
   }
 
   @CircuitBreaker(name = "userProvider", fallbackMethod = "validateScopesFallback")
-  public boolean validateScopes(String endpoint, Set<String> scopes) throws UserProviderException {
+  public boolean validateScopes(String endpoint, Set<String> scopes) {
     try {
       var requestBuilder = restClient.post().uri(endpoint);
 
@@ -128,8 +126,7 @@ public class UserProviderRestClient {
    * user ID available in the circuit breaker fallback method signature.
    */
   @CircuitBreaker(name = "userProvider", fallbackMethod = "registerMfaFallback")
-  public boolean registerMfa(String mfaEndpoint, String mfaSecret, String mfaKeyId)
-      throws UserProviderException {
+  public boolean registerMfa(String mfaEndpoint, String mfaSecret, String mfaKeyId) {
     try {
       Map<String, Object> requestBody =
           Map.of(
@@ -137,7 +134,7 @@ public class UserProviderRestClient {
               "twoFaRegistered", true,
               "mfaKeyId", mfaKeyId);
 
-      var requestBuilder = restClient.post().uri(mfaEndpoint).body(requestBody);
+      var requestBuilder = restClient.patch().uri(mfaEndpoint).body(requestBody);
 
       requestBuilder = setUpHeaders(requestBuilder);
 
@@ -169,7 +166,7 @@ public class UserProviderRestClient {
    * authentication failed due to service unavailability, not invalid credentials.
    */
   Optional<UserResponse> findByUsernameFallback(
-      String endpoint, String username, Exception exception) throws UserProviderException {
+      String endpoint, String username, Exception exception) {
     log.warn("Circuit breaker activated for findByUsername - user provider service unavailable");
     throw new UserProviderException(
         List.of("error.code.circuit-breaker.open"),
@@ -183,8 +180,7 @@ public class UserProviderRestClient {
    * validation failed due to service unavailability, not invalid credentials.
    */
   Optional<UserResponse> validateCredentialsFallback(
-      String endpoint, String username, String password, Set<String> scopes, Exception exception)
-      throws UserProviderException {
+      String endpoint, String username, String password, Set<String> scopes, Exception exception) {
     log.warn(
         "Circuit breaker activated for validateCredentials - user provider service unavailable");
     throw new UserProviderException(
@@ -209,8 +205,7 @@ public class UserProviderRestClient {
    * incomplete security configurations.
    */
   boolean registerMfaFallback(
-      String mfaEndpoint, String mfaSecret, String mfaKeyId, Exception exception)
-      throws UserProviderException {
+      String mfaEndpoint, String mfaSecret, String mfaKeyId, Exception exception) {
     log.warn("Circuit breaker activated for registerMfa - user provider service unavailable");
     throw new UserProviderException(
         List.of("error.code.circuit-breaker.open"),
