@@ -12,6 +12,8 @@ import com.kuneiform.domain.port.UserProviderPort;
 import com.kuneiform.infrastructure.adapter.models.MfaDataResponse;
 import com.kuneiform.infrastructure.adapter.models.UserResponse;
 import com.kuneiform.infrastructure.adapter.restclients.UserProviderRestClient;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -201,6 +203,12 @@ public class HttpUserProviderPortAdapter implements UserProviderPort {
   }
 
   private User mapToUser(UserResponse response) {
+    if (response.userId() == null || response.userId().isBlank()) {
+      throw new UserProviderException(
+          Collections.singletonList("INVALID_RESPONSE"),
+          Collections.singletonList("User ID is missing in the response from user provider"),
+          Instant.now());
+    }
     // Map MFA data if present
     MfaData mfaData = null;
     if (response.mfaData() != null) {

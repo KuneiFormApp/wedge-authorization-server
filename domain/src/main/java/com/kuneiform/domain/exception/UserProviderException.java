@@ -9,7 +9,7 @@ import java.util.List;
  * <p>Contains structured error information including error codes, messages, and timestamp as
  * specified by the API provider contract.
  */
-public class UserProviderException extends Exception {
+public class UserProviderException extends RuntimeException {
 
   private final List<String> errorCodes;
   private final List<String> messages;

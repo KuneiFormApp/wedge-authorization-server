@@ -468,6 +468,7 @@ The endpoint URL is templated with `{userId}`, for example:
 ```json
 {
   "mfaSecret": "BASE32ENCODEDSECRET",
+  "twoFaRegistered": true,
   "mfaKeyId": "WedgeAuth:user@example.com"
 }
 ```
